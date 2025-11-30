@@ -1,12 +1,89 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { FaGoogle } from 'react-icons/fa'
 import { HiEye, HiEyeOff } from 'react-icons/hi'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 
 function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { signUp, isAuthenticated, loading: authLoading } = useAuth()
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/customer-support', { replace: true })
+    }
+  }, [isAuthenticated, authLoading, navigate])
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-opsly-dark">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    )
+  }
+
+  // Redirect if authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/customer-support" replace />
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    setLoading(true)
+
+    // Validation
+    if (!name || !email || !password || !confirmPassword) {
+      setError('Please fill in all fields')
+      setLoading(false)
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      setLoading(false)
+      return
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const { error: signUpError } = await signUp(email, password, {
+        full_name: name,
+      })
+      
+      if (signUpError) {
+        setError(signUpError.message || 'Failed to create account. Please try again.')
+      } else {
+        setSuccess('Account created successfully! Please check your email to verify your account before signing in.')
+        // Redirect after a delay
+        setTimeout(() => {
+          navigate('/login')
+        }, 3000)
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.')
+      console.error('Signup error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex bg-opsly-dark">
@@ -27,60 +104,97 @@ function SignupPage() {
           <h1 className="text-4xl font-bold text-white mb-2">Create Account</h1>
           <p className="text-gray-400 mb-8">Please enter your details to get started</p>
 
-          {/* Name Input */}
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Full Name"
-              className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
-            />
-          </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
-          {/* Email Input */}
-          <div className="mb-4">
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
-            />
-          </div>
+          {/* Success Message */}
+          {success && (
+            <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 text-green-200 rounded-lg text-sm">
+              {success}
+            </div>
+          )}
 
-          {/* Password Input */}
-          <div className="mb-4 relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple pr-12"
-            />
-            <button
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
-            >
-              {showPassword ? <HiEyeOff /> : <HiEye />}
+          <form onSubmit={handleSubmit}>
+            {/* Name Input */}
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={loading}
+                className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple disabled:opacity-50"
+                required
+              />
+            </div>
+
+            {/* Email Input */}
+            <div className="mb-4">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple disabled:opacity-50"
+                required
+              />
+            </div>
+
+            {/* Password Input */}
+            <div className="mb-4 relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple pr-12 disabled:opacity-50"
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
+              >
+                {showPassword ? <HiEyeOff /> : <HiEye />}
+              </button>
+            </div>
+
+            {/* Confirm Password Input */}
+            <div className="mb-6 relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={loading}
+                className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple pr-12 disabled:opacity-50"
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
+              >
+                {showConfirmPassword ? <HiEyeOff /> : <HiEye />}
+              </button>
+            </div>
+
+            {/* Sign Up Button */}
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-b from-opsly-purple to-purple-700 text-white rounded-lg font-semibold mb-6 hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed">
+              {loading ? 'Creating Account...' : 'Sign Up'}
             </button>
-          </div>
-
-          {/* Confirm Password Input */}
-          <div className="mb-6 relative">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm Password"
-              className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple pr-12"
-            />
-            <button
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
-            >
-              {showConfirmPassword ? <HiEyeOff /> : <HiEye />}
-            </button>
-          </div>
-
-          {/* Sign Up Button */}
-          <button 
-            onClick={() => navigate('/customer-support')}
-            className="w-full py-3 bg-gradient-to-b from-opsly-purple to-purple-700 text-white rounded-lg font-semibold mb-6 hover:opacity-90 transition">
-            Sign Up
-          </button>
+          </form>
 
           {/* OR Separator */}
           <div className="flex items-center mb-6">

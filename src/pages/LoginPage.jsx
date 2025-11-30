@@ -1,11 +1,76 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { FaGoogle } from 'react-icons/fa'
 import { HiEye, HiEyeOff } from 'react-icons/hi'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { signIn, isAuthenticated, loading: authLoading } = useAuth()
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/customer-support', { replace: true })
+    }
+  }, [isAuthenticated, authLoading, navigate])
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-opsly-dark">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    )
+  }
+
+  // Redirect if authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/customer-support" replace />
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    if (!email || !password) {
+      setError('Please fill in all fields')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const { error: signInError } = await signIn(email, password)
+      
+      if (signInError) {
+        setError(signInError.message || 'Failed to sign in. Please check your credentials.')
+      } else {
+        // Redirect to dashboard or intended page
+        navigate('/customer-support')
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.')
+      console.error('Login error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    if (!email) {
+      setError('Please enter your email address first')
+      return
+    }
+    // TODO: Implement forgot password flow
+    alert('Password reset functionality coming soon!')
+  }
 
   return (
     <div className="min-h-screen flex bg-opsly-dark">
@@ -26,41 +91,65 @@ function LoginPage() {
           <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
           <p className="text-gray-400 mb-8">Please enter your username and password</p>
 
-          {/* Email Input */}
-          <div className="mb-4">
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
-            />
-          </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
-          {/* Password Input */}
-          <div className="mb-4 relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple pr-12"
-            />
-            <button
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
-            >
-              {showPassword ? <HiEyeOff /> : <HiEye />}
+          <form onSubmit={handleSubmit}>
+            {/* Email Input */}
+            <div className="mb-4">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple disabled:opacity-50"
+                required
+              />
+            </div>
+
+            {/* Password Input */}
+            <div className="mb-4 relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple pr-12 disabled:opacity-50"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
+              >
+                {showPassword ? <HiEyeOff /> : <HiEye />}
+              </button>
+            </div>
+
+            {/* Forgot Password */}
+            <div className="flex justify-end mb-6">
+              <button 
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-opsly-purple hover:underline text-sm">
+                Forgot Password?
+              </button>
+            </div>
+
+            {/* Sign In Button */}
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-b from-opsly-purple to-purple-700 text-white rounded-lg font-semibold mb-6 hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed">
+              {loading ? 'Signing In...' : 'Sign In'}
             </button>
-          </div>
-
-          {/* Forgot Password */}
-          <div className="flex justify-end mb-6">
-            <a href="#" className="text-opsly-purple hover:underline text-sm">Forgot Password?</a>
-          </div>
-
-          {/* Sign In Button */}
-          <button 
-            onClick={() => navigate('/customer-support')}
-            className="w-full py-3 bg-gradient-to-b from-opsly-purple to-purple-700 text-white rounded-lg font-semibold mb-6 hover:opacity-90 transition">
-            Sign In
-          </button>
+          </form>
 
           {/* OR Separator */}
           <div className="flex items-center mb-6">

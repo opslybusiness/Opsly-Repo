@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
@@ -14,19 +16,77 @@ import RAGChatbot from './pages/RAGChatbot'
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/marketing" element={<MarketingDashboard />} />
-        <Route path="/marketing/post-analytics" element={<MarketingPostAnalytics />} />
-        <Route path="/customer-support" element={<CustomerSupportDashboard />} />
-        <Route path="/customer-support/ticket/:id" element={<TicketDetail />} />
-        <Route path="/finance" element={<FinanceDashboard />} />
-        <Route path="/finance/forecast" element={<FinanceForecast />} />
-        <Route path="/finance/anomaly" element={<FinanceAnomaly />} />
-        <Route path="/chatbot" element={<RAGChatbot />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route 
+            path="/marketing" 
+            element={
+              <ProtectedRoute>
+                <MarketingDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/marketing/post-analytics" 
+            element={
+              <ProtectedRoute>
+                <MarketingPostAnalytics />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/customer-support" 
+            element={
+              <ProtectedRoute>
+                <CustomerSupportDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/customer-support/ticket/:id" 
+            element={
+              <ProtectedRoute>
+                <TicketDetail />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/finance" 
+            element={
+              <ProtectedRoute>
+                <FinanceDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/finance/forecast" 
+            element={
+              <ProtectedRoute>
+                <FinanceForecast />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/finance/anomaly" 
+            element={
+              <ProtectedRoute>
+                <FinanceAnomaly />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/chatbot" 
+            element={
+              <ProtectedRoute>
+                <RAGChatbot />
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </AuthProvider>
     </Router>
   )
 }

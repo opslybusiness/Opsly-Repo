@@ -1,12 +1,29 @@
-import { Link, useLocation } from 'react-router-dom'
-import { HiPhone, HiChartBar, HiFolder, HiCog, HiClock, HiChat } from 'react-icons/hi'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { HiPhone, HiChartBar, HiFolder, HiCog, HiClock, HiChat, HiLogout } from 'react-icons/hi'
 import { FaSearch, FaBell } from 'react-icons/fa'
+import { useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 
-function DashboardLayout({ children, userName = "User" }) {
+function DashboardLayout({ children, userName }) {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, signOut } = useAuth()
+  const [showUserMenu, setShowUserMenu] = useState(false)
+
+  // Get user name from auth or fallback to prop or email
+  const displayName = userName || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
 
   const isActive = (path) => {
     return location.pathname.startsWith(path)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      navigate('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
   }
 
   return (
@@ -40,13 +57,41 @@ function DashboardLayout({ children, userName = "User" }) {
         {/* Header */}
         <header className="bg-opsly-dark px-8 py-6 flex items-center justify-between border-b border-gray-800">
           <h2 className="text-xl text-white">
-            Good Morning, <span className="text-opsly-purple">{userName}</span>
+            Good Morning, <span className="text-opsly-purple">{displayName}</span>
           </h2>
           <div className="flex items-center gap-6">
-            <FaSearch className="text-xl text-white cursor-pointer" />
-            <FaBell className="text-xl text-white cursor-pointer" />
-            <div className="w-10 h-10 bg-opsly-purple rounded-full flex items-center justify-center text-white font-semibold">
-              {userName.charAt(0)}
+            <FaSearch className="text-xl text-white cursor-pointer hover:text-gray-300 transition" />
+            <FaBell className="text-xl text-white cursor-pointer hover:text-gray-300 transition" />
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="w-10 h-10 bg-opsly-purple rounded-full flex items-center justify-center text-white font-semibold hover:bg-purple-700 transition"
+              >
+                {displayName.charAt(0).toUpperCase()}
+              </button>
+              
+              {/* User Dropdown Menu */}
+              {showUserMenu && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setShowUserMenu(false)}
+                  ></div>
+                  <div className="absolute right-0 mt-2 w-48 bg-opsly-card rounded-lg shadow-lg py-2 z-20 border border-gray-700">
+                    <div className="px-4 py-2 border-b border-gray-700">
+                      <p className="text-white text-sm font-semibold">{displayName}</p>
+                      <p className="text-gray-400 text-xs">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 flex items-center gap-2 transition"
+                    >
+                      <HiLogout className="text-lg" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>

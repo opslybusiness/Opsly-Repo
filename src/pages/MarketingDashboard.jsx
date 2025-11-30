@@ -5,8 +5,10 @@ import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { getApiUrl } from '../config/api'
 import { getFacebookAnalytics, getInstagramAnalytics, postDynamic } from '../services/marketingService'
+import { useAuth } from '../contexts/AuthContext'
 
 function MarketingDashboard() {
+  const { userId, isAuthenticated } = useAuth()
   const [selectedPlatform, setSelectedPlatform] = useState('facebook')
   const [connectionStatus, setConnectionStatus] = useState({
     facebook: false,
@@ -85,10 +87,15 @@ function MarketingDashboard() {
 
     setIsPosting(true)
 
+    if (!isAuthenticated || !userId) {
+      setPostError('Please log in to post')
+      return
+    }
+
     try {
       // Create FormData for multipart/form-data
       const formData = new FormData()
-      formData.append('user_id', '3') // TODO: Get from auth context
+      // user_id is now extracted from JWT token in backend, no need to send it
       formData.append('post_to_facebook', postForm.postToFacebook)
       formData.append('post_to_instagram', postForm.postToInstagram)
       formData.append('post_now', postForm.postNow)

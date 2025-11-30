@@ -26,13 +26,15 @@ export const connectInstagram = async () => {
 }
 
 export const getFacebookAnalytics = async () => {
-  return apiClient('/facebook/page-analytics?user_id=3', {
+  // user_id is now extracted from JWT token in backend
+  return apiClient('/facebook/page-analytics', {
     method: 'GET',
   })
 }
 
 export const getInstagramAnalytics = async () => {
-  return apiClient('/instagram/page-analytics?user_id=3', {
+  // user_id is now extracted from JWT token in backend
+  return apiClient('/instagram/page-analytics', {
     method: 'GET',
   })
 }
