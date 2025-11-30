@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
 import MarketingDashboard from './pages/MarketingDashboard'
 import MarketingPostAnalytics from './pages/MarketingPostAnalytics'
 import CustomerSupportDashboard from './pages/CustomerSupportDashboard'
@@ -8,6 +9,7 @@ import TicketDetail from './pages/TicketDetail'
 import FinanceDashboard from './pages/FinanceDashboard'
 import FinanceForecast from './pages/FinanceForecast'
 import FinanceAnomaly from './pages/FinanceAnomaly'
+import RAGChatbot from './pages/RAGChatbot'
 
 function App() {
   return (
@@ -15,6 +17,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="/marketing" element={<MarketingDashboard />} />
         <Route path="/marketing/post-analytics" element={<MarketingPostAnalytics />} />
         <Route path="/customer-support" element={<CustomerSupportDashboard />} />
@@ -22,6 +25,7 @@ function App() {
         <Route path="/finance" element={<FinanceDashboard />} />
         <Route path="/finance/forecast" element={<FinanceForecast />} />
         <Route path="/finance/anomaly" element={<FinanceAnomaly />} />
+        <Route path="/chatbot" element={<RAGChatbot />} />
       </Routes>
     </Router>
   )

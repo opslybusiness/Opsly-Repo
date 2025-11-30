@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { HiPhone, HiChartBar, HiFolder, HiCog, HiClock } from 'react-icons/hi'
+import { HiPhone, HiChartBar, HiFolder, HiCog, HiClock, HiChat } from 'react-icons/hi'
 import { FaSearch, FaBell } from 'react-icons/fa'
 
 function DashboardLayout({ children, userName = "User" }) {
@@ -24,6 +24,9 @@ function DashboardLayout({ children, userName = "User" }) {
         </Link>
         <Link to="/finance" className={`mb-6 p-3 rounded-lg ${isActive('/finance') ? 'bg-blue-700' : 'hover:bg-blue-700'}`}>
           <HiFolder className="text-2xl text-white" />
+        </Link>
+        <Link to="/chatbot" className={`mb-6 p-3 rounded-lg ${isActive('/chatbot') ? 'bg-blue-700' : 'hover:bg-blue-700'}`}>
+          <HiChat className="text-2xl text-white" />
         </Link>
         <div className="mt-auto">
           <button className="mb-6 p-3 rounded-lg hover:bg-blue-700">

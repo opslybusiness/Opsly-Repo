@@ -3,13 +3,14 @@ import { FaGoogle } from 'react-icons/fa'
 import { HiEye, HiEyeOff } from 'react-icons/hi'
 import { useState } from 'react'
 
-function LoginPage() {
+function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const navigate = useNavigate()
 
   return (
     <div className="min-h-screen flex bg-opsly-dark">
-      {/* Left Section - Login Form */}
+      {/* Left Section - Signup Form */}
       <div className="flex-1 bg-opsly-dark p-12 flex flex-col justify-center relative overflow-hidden">
         {/* Hexagonal Pattern Background */}
         <div className="absolute inset-0 opacity-10" style={{
@@ -23,8 +24,17 @@ function LoginPage() {
           </div>
 
           {/* Welcome Message */}
-          <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-400 mb-8">Please enter your username and password</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Create Account</h1>
+          <p className="text-gray-400 mb-8">Please enter your details to get started</p>
+
+          {/* Name Input */}
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Full Name"
+              className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
+            />
+          </div>
 
           {/* Email Input */}
           <div className="mb-4">
@@ -50,16 +60,26 @@ function LoginPage() {
             </button>
           </div>
 
-          {/* Forgot Password */}
-          <div className="flex justify-end mb-6">
-            <a href="#" className="text-opsly-purple hover:underline text-sm">Forgot Password?</a>
+          {/* Confirm Password Input */}
+          <div className="mb-6 relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirm Password"
+              className="w-full px-4 py-3 bg-white text-opsly-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple pr-12"
+            />
+            <button
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
+            >
+              {showConfirmPassword ? <HiEyeOff /> : <HiEye />}
+            </button>
           </div>
 
-          {/* Sign In Button */}
+          {/* Sign Up Button */}
           <button 
             onClick={() => navigate('/customer-support')}
             className="w-full py-3 bg-gradient-to-b from-opsly-purple to-purple-700 text-white rounded-lg font-semibold mb-6 hover:opacity-90 transition">
-            Sign In
+            Sign Up
           </button>
 
           {/* OR Separator */}
@@ -77,10 +97,10 @@ function LoginPage() {
             Continue With Google
           </button>
 
-          {/* Sign Up Link */}
+          {/* Sign In Link */}
           <p className="text-center mt-6 text-gray-400">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-opsly-purple hover:underline">Sign Up</Link>
+            Already have an account?{' '}
+            <Link to="/login" className="text-opsly-purple hover:underline">Sign In</Link>
           </p>
         </div>
       </div>
@@ -124,5 +144,5 @@ function LoginPage() {
   )
 }
 
-export default LoginPage
+export default SignupPage
 

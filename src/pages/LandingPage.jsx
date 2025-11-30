@@ -17,7 +17,7 @@ function LandingPage() {
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <Link to="/login" className="px-6 py-2 bg-gradient-to-r from-opsly-purple to-purple-600 text-white rounded-lg hover:opacity-90 transition">
+          <Link to="/signup" className="px-6 py-2 bg-gradient-to-r from-opsly-purple to-purple-600 text-white rounded-lg hover:opacity-90 transition">
             Sign Up
           </Link>
           <Link to="/login" className="px-6 py-2 border border-white text-white rounded-lg hover:bg-white hover:text-opsly-dark transition">
