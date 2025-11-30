@@ -11,8 +11,8 @@ const isDevelopment =
 
 // Determine the base URL:
 // 1. If VITE_API_BASE_URL is set, use it (works for both dev and prod)
-// 2. If in development and no env var, use '/api' (Vite proxy)
-// 3. Otherwise (production), use the default production URL
+// 2. Otherwise, use '/api' which is proxied by Vite in dev and Vercel in production
+//    This avoids CORS issues by making requests appear to come from the same origin
 const getBaseUrl = () => {
   // Priority 1: Use environment variable if set (always takes precedence)
   const envApiUrl = import.meta.env.VITE_API_BASE_URL
@@ -21,14 +21,11 @@ const getBaseUrl = () => {
     return envApiUrl.replace(/\/$/, '')
   }
   
-  // Priority 2: In development, use proxy
-  if (isDevelopment) {
-    return '/api'
-  }
-  
-  // Priority 3: Production - ALWAYS use full API URL (default fallback)
-  // This ensures production builds always work even if env detection fails
-  return 'https://marketing-minds-be.vercel.app'
+  // Priority 2: Use '/api' proxy in both dev and production
+  // - In development: Vite proxy handles it (see vite.config.js)
+  // - In production: Vercel rewrites handle it (see vercel.json)
+  // This avoids CORS issues since requests appear to come from the same origin
+  return '/api'
 }
 
 const BASE_URL = getBaseUrl()
