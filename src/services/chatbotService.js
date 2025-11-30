@@ -8,6 +8,12 @@ const ragApiClient = async (endpoint, options = {}) => {
   
   const defaultHeaders = {}
   
+  // Add auth token if available (required for chatbot backend)
+  const token = localStorage.getItem('token')
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`
+  }
+  
   // For file uploads, don't set Content-Type - let browser set it with boundary
   if (!(options.body instanceof FormData)) {
     defaultHeaders['Content-Type'] = 'application/json'
