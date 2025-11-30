@@ -23,6 +23,7 @@ export const apiClient = async (endpoint, options = {}) => {
   }
 
   try {
+    console.log('Making API request to:', url)
     const response = await fetch(url, config)
     
     // Handle non-JSON responses
@@ -32,12 +33,22 @@ export const apiClient = async (endpoint, options = {}) => {
       : await response.text()
     
     if (!response.ok) {
+      console.error('API request failed:', {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        data
+      })
       throw new Error(data.message || data || `HTTP error! status: ${response.status}`)
     }
     
     return data
   } catch (error) {
-    console.error('API Error:', error)
+    console.error('API Error:', {
+      url,
+      error: error.message,
+      stack: error.stack
+    })
     throw error
   }
 }

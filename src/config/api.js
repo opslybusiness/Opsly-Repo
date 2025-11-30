@@ -1,31 +1,67 @@
 // src/config/api.js
 // In development, use Vite proxy to avoid CORS issues
 // In production, use the full API URL
-// Check mode first as it's more reliable than DEV/PROD flags
-const isDevelopment = import.meta.env.MODE === 'development' || import.meta.env.DEV
-const isProduction = import.meta.env.MODE === 'production' || import.meta.env.PROD
+
+// Check if we're in development mode
+// Vite sets MODE to 'development' in dev, 'production' in production builds
+// Also check hostname as a fallback for better detection
+const isDevelopment = 
+  import.meta.env.MODE === 'development' || 
+  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('localhost')))
 
 // Determine the base URL:
 // 1. If VITE_API_BASE_URL is set, use it (works for both dev and prod)
 // 2. If in development and no env var, use '/api' (Vite proxy)
-// 3. If in production and no env var, use the default production URL
+// 3. Otherwise (production), use the default production URL
 const getBaseUrl = () => {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL
+  // Priority 1: Use environment variable if set (always takes precedence)
+  const envApiUrl = import.meta.env.VITE_API_BASE_URL
+  if (envApiUrl && envApiUrl.trim() !== '') {
+    // Remove trailing slash if present
+    return envApiUrl.replace(/\/$/, '')
   }
+  
+  // Priority 2: In development, use proxy
   if (isDevelopment) {
     return '/api'
   }
+  
+  // Priority 3: Production - ALWAYS use full API URL (default fallback)
+  // This ensures production builds always work even if env detection fails
   return 'https://marketing-minds-be.vercel.app'
 }
 
+const BASE_URL = getBaseUrl()
+
+// Log in development to help debug
+if (isDevelopment) {
+  console.log('API Config - Development mode:', {
+    MODE: import.meta.env.MODE,
+    DEV: import.meta.env.DEV,
+    BASE_URL: BASE_URL,
+    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL
+  })
+} else {
+  console.log('API Config - Production mode:', {
+    MODE: import.meta.env.MODE,
+    BASE_URL: BASE_URL,
+    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL
+  })
+}
+
 export const API_CONFIG = {
-  BASE_URL: getBaseUrl(),
+  BASE_URL: BASE_URL,
 }
 
 export const getApiUrl = (endpoint) => {
   // Remove leading slash from endpoint if present to avoid double slashes
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
-  return `${API_CONFIG.BASE_URL}${cleanEndpoint}`
+  const fullUrl = `${API_CONFIG.BASE_URL}${cleanEndpoint}`
+  
+  // Log in development
+  if (isDevelopment) {
+    console.log('API Call:', fullUrl)
+  }
+  
+  return fullUrl
 }
-
