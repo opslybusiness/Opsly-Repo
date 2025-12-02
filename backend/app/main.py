@@ -20,6 +20,7 @@ app = FastAPI()
 
 origins = [
     "https://marketing-minds-three.vercel.app",
+    "https://www.opslybusiness.me", 
 ]
 
 #cors 
