@@ -4,8 +4,12 @@ import { getApiUrl } from '../config/api'
 export const apiClient = async (endpoint, options = {}) => {
   const url = getApiUrl(endpoint)
   
-  const defaultHeaders = {
-    'Content-Type': 'application/json',
+  const defaultHeaders = {}
+  
+  // Only set Content-Type to JSON if body is not FormData
+  // FormData needs to set its own Content-Type with boundary
+  if (!(options.body instanceof FormData)) {
+    defaultHeaders['Content-Type'] = 'application/json'
   }
 
   // Add auth token if available
