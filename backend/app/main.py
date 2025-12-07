@@ -14,7 +14,7 @@ from app.routes.post_scheduling import router as scheduling_router
 from app.routes.finance_forecasting import router as finance_forecasting_router
 from app.routes.fraud_detection import router as fraud_detection_router
 from fastapi.middleware.cors import CORSMiddleware
-
+from uuid import UUID as UUIDType
 
 load_dotenv()
 
@@ -23,8 +23,6 @@ app = FastAPI()
 origins = [
     "https://marketing-minds-three.vercel.app",
     "https://www.opslybusiness.me",
-    "http://localhost:5173",  # Vite dev server
-    "http://localhost:3000",  # Alternative dev port
 ]
 
 #cors 
@@ -123,3 +121,35 @@ async def facebook_callback(request: Request, db: Session = Depends(get_db)):
     #     "facebook_id": facebook_id,
     #     "session_token": long_token
     # }
+
+@app.get("/user/connection-status")
+def get_connection_status(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_user_id_from_token)
+):
+    """
+    Check if user has a session_token (Facebook/Instagram connection).
+    Returns connection status for both platforms and user name.
+    """
+    try:
+        user_uuid = UUIDType(user_id)
+    except ValueError:
+        return {"error": "Invalid user_id format. Expected UUID."}
+    
+    user = db.query(User).filter(User.user_id == user_uuid).first()
+    
+    if not user:
+        return {
+            "facebook": False,
+            "instagram": False,
+            "name": None
+        }
+    
+    # If user has session_token, both Facebook and Instagram are considered connected
+    has_session_token = bool(user.session_token)
+    
+    return {
+        "facebook": has_session_token,
+        "instagram": has_session_token,
+        "name": user.name
+    }
