@@ -262,8 +262,13 @@ def check_transaction_fraud(
     # Load model
     try:
         _, model, encoder, median_imputations = load_fraud_model()
-    except HTTPException:
+    except HTTPException as e:
         raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error loading fraud detection model: {str(e)}"
+        )
     
     # Create a minimal transaction dataframe with required fields
     # Note: The model was trained on a complex dataset. We'll use defaults for missing fields.
@@ -360,8 +365,13 @@ def check_transactions_batch(
     # Load model
     try:
         _, model, encoder, median_imputations = load_fraud_model()
-    except HTTPException:
+    except HTTPException as e:
         raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error loading fraud detection model: {str(e)}"
+        )
     
     try:
         # Read CSV

@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
+from app.auth import get_user_id_from_token
 from datetime import datetime, timedelta
 import requests
 from app.routes.facebook_analytics import router as analytics_router
