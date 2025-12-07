@@ -73,13 +73,17 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-opsly-dark">
+    <div className="h-screen flex bg-opsly-dark relative overflow-hidden px-16">
+      {/* Vertical Lines Background Pattern */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-20"
+        style={{
+          backgroundImage: 'repeating-linear-gradient(to right, rgba(255, 255, 255, 0.1) 0px, rgba(255, 255, 255, 0.1) 1px, transparent 1px, transparent 100px)',
+          backgroundSize: '100px 100%'
+        }}
+      ></div>
       {/* Left Section - Login Form */}
-      <div className="flex-1 bg-opsly-dark p-12 flex flex-col justify-center relative overflow-hidden">
-        {/* Hexagonal Pattern Background */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239933ea' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}></div>
+      <div className="flex-1 p-8 flex flex-col justify-center items-end relative overflow-y-auto z-10 pr-8">
 
         <div className="relative z-10 max-w-md w-full">
           {/* Logo */}
@@ -89,7 +93,7 @@ function LoginPage() {
 
           {/* Welcome Message */}
           <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-400 mb-8">Please enter your username and password</p>
+          <p className="mb-8" style={{ color: '#FEF08A' }}>Please enter your username and password</p>
 
           {/* Error Message */}
           {error && (
@@ -175,38 +179,9 @@ function LoginPage() {
       </div>
 
       {/* Right Section - Illustration */}
-      <div className="flex-1 bg-opsly-gray p-12 flex flex-col justify-center items-center relative overflow-hidden">
-        {/* Hexagonal Pattern Background */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239933ea' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}></div>
-
-        <div className="relative z-10 flex flex-col items-center">
-          {/* 3D Character Placeholder - Using a styled div to represent the character */}
-          <div className="relative mb-8">
-            <div className="w-64 h-80 bg-gradient-to-br from-gray-400 to-gray-600 rounded-2xl flex items-center justify-center relative" style={{
-              boxShadow: '0 0 40px rgba(147, 51, 234, 0.5)',
-              border: '2px solid rgba(147, 51, 234, 0.3)'
-            }}>
-              <div className="text-6xl">👨‍💻</div>
-            </div>
-            {/* Floating Shapes */}
-            <div className="absolute -top-8 -left-8 w-16 h-16 bg-opsly-purple opacity-60 rounded-lg transform rotate-45"></div>
-            <div className="absolute -bottom-8 -right-8 w-20 h-12 bg-green-400 opacity-60 rounded-full"></div>
-          </div>
-
-          {/* Promotional Text */}
-          <p className="text-2xl text-white text-center">
-            Business Operations, done when you're{' '}
-            <span className="text-opsly-purple">asleep</span>
-          </p>
-
-          {/* Pagination Dots */}
-          <div className="flex gap-2 mt-8">
-            <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
-            <div className="w-3 h-2 bg-opsly-purple rounded-full"></div>
-            <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
-          </div>
+      <div className="flex-1 flex flex-col justify-center items-end relative overflow-hidden py-8 z-10 pr-8">
+        <div className="relative flex items-center justify-center w-full h-full py-8">
+          <img src="/Frame 70.png" alt="Illustration" className="object-contain max-w-full max-h-full" />
         </div>
       </div>
     </div>

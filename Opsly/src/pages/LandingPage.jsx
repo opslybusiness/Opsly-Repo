@@ -4,12 +4,20 @@ import { HiPhone, HiThumbUp, HiChartBar, HiUser } from 'react-icons/hi'
 
 function LandingPage() {
   return (
-    <div className="min-h-screen bg-opsly-dark">
+    <div className="min-h-screen bg-opsly-dark relative">
+      {/* Vertical Lines Background Pattern */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-20"
+        style={{
+          backgroundImage: 'repeating-linear-gradient(to right, rgba(255, 255, 255, 0.1) 0px, rgba(255, 255, 255, 0.1) 1px, transparent 1px, transparent 100px)',
+          backgroundSize: '100px 100%'
+        }}
+      ></div>
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-6">
+      <header className="flex items-center justify-between px-16 py-6 relative z-10">
         <div className="flex items-center gap-8">
-          <div className="text-2xl font-bold text-white">
-            <span className="text-opsly-purple">Ö</span>psly
+          <div className="text-2xl font-bold">
+            <span className="text-opsly-purple">Öps</span><span className="text-white">ly</span>
           </div>
           <nav className="flex items-center gap-8">
             <a href="#features" className="text-white hover:text-opsly-purple transition">Features</a>
@@ -26,91 +34,79 @@ function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center py-20 px-8">
-        <div className="w-24 h-24 mb-8 flex items-center justify-center text-6xl font-bold text-opsly-purple bg-opsly-card rounded-full">
-          Ö
-        </div>
-        <h1 className="text-6xl font-bold text-center mb-4">
-          <span className="text-white">smart support</span>{' '}
-          <span className="text-opsly-purple">strong decisions.</span>
-        </h1>
-        <p className="text-xl text-gray-300 mb-12 text-center">
-          Efficiently automate your business and boost productivity.
-        </p>
-        <button className="px-8 py-4 bg-gradient-to-r from-opsly-purple to-purple-600 text-white rounded-lg text-lg font-semibold hover:opacity-90 transition">
-          Learn More
-        </button>
-      </section>
+      {/* Main Container - starts below header, ends at bottom of feature cards */}
+      <div className="relative z-10 mx-16 mb-8 mt-4 rounded-xl overflow-hidden" style={{ backgroundColor: '#1E1E1E', borderRadius: '12px' }}>
+        {/* Hero Section */}
+        <section className="flex flex-col items-center justify-center py-20 px-8">
+          <div className="mb-8">
+            <img src="/logo.png" alt="Opsly Logo" className="w-24 h-24" />
+          </div>
+          <h1 className="text-6xl font-bold text-center mb-4 font-inter leading-tight">
+            <div className="bg-gradient-to-r from-white to-opsly-purple bg-clip-text text-transparent">smart support</div>
+            <div className="bg-gradient-to-r from-opsly-purple to-white bg-clip-text text-transparent">strong decisions.</div>
+          </h1>
+          <p className="text-xl text-gray-300 mb-12 text-center">
+            Efficiently automate your business and boost productivity.
+          </p>
+          <button className="px-8 py-4 bg-gradient-to-r from-opsly-purple to-purple-600 text-white rounded-lg text-lg font-semibold hover:opacity-90 transition">
+            Learn More
+          </button>
+        </section>
 
-      {/* Feature Cards */}
-      <section className="px-8 pb-20 relative">
-        {/* Purple Gradient Background - bottom to top */}
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 via-purple-800/30 to-transparent pointer-events-none"></div>
-        
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+        {/* Feature Cards */}
+        <section className="relative" style={{ paddingLeft: '64px', paddingRight: '64px', paddingBottom: '0', marginBottom: '-80px' }}>
+          {/* Purple Gradient Background - bottom to top */}
+          <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 via-purple-800/30 to-transparent pointer-events-none"></div>
+          
+          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
           {/* Integrations Card */}
-          <div className="bg-gray-100 rounded-lg p-8 shadow-lg" style={{ boxShadow: '0 0 20px rgba(147, 51, 234, 0.3)' }}>
+          <div className="bg-gray-100 rounded-lg p-8 shadow-lg" style={{ boxShadow: '0 4px 6px -1px rgba(94, 94, 94, 0.3), 0 2px 4px -1px rgba(94, 94, 94, 0.2)', border: '2px solid #5E5E5E' }}>
             <h3 className="text-2xl font-semibold text-gray-900 mb-6">Integrations</h3>
-            <div className="flex gap-4">
-              <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center shadow-md">
-                <FaVideo className="text-green-500 text-xl" />
-              </div>
-              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold shadow-md">
-                31
-              </div>
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold shadow-md" style={{ background: 'linear-gradient(to bottom right, #ea4335 0%, #ea4335 50%, #fbbc04 50%, #fbbc04 100%)' }}>
-                <span className="text-white font-bold">M</span>
-              </div>
+            <div className="flex gap-8">
+              <img src="/Gmail.png" alt="Gmail" className="w-20 h-20 rounded-lg object-cover" />
+              <img src="/Meet.png" alt="Meet" className="w-20 h-20 rounded-lg object-cover" />
+              <img src="/Calender.png" alt="Calendar" className="w-20 h-20 rounded-lg object-cover" />
             </div>
           </div>
 
           {/* Customer Support Card */}
-          <div className="bg-gray-100 rounded-lg p-8 shadow-lg" style={{ boxShadow: '0 0 20px rgba(147, 51, 234, 0.3)' }}>
+          <div className="bg-gray-100 rounded-lg p-8 shadow-lg" style={{ boxShadow: '0 4px 6px -1px rgba(94, 94, 94, 0.3), 0 2px 4px -1px rgba(94, 94, 94, 0.2)', border: '2px solid #5E5E5E' }}>
             <h3 className="text-2xl font-semibold text-gray-900 mb-6">Customer Support</h3>
-            <div className="flex flex-col items-center gap-4">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-full border-4 border-opsly-purple flex items-center justify-center bg-white">
-                  <HiUser className="text-opsly-purple text-2xl" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-8 h-5 bg-opsly-purple rounded flex items-center justify-center text-white text-xs font-bold">
-                  AI
-                </div>
-              </div>
-              <div className="flex gap-4 bg-orange-50 rounded-lg p-3">
-                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center">
-                  <HiPhone className="text-white text-xl" />
-                </div>
-                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center">
-                  <HiThumbUp className="text-white text-xl" />
-                </div>
-                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center">
-                  <HiChartBar className="text-white text-xl" />
-                </div>
-              </div>
+            <div className="flex items-center justify-center">
+              <img src="/Frame 19.png" alt="Customer Support" className="object-contain" />
             </div>
           </div>
 
           {/* Analytics Card */}
-          <div className="bg-gray-100 rounded-lg p-8 shadow-lg" style={{ boxShadow: '0 0 20px rgba(147, 51, 234, 0.3)' }}>
+          <div className="bg-gray-100 rounded-lg p-8 shadow-lg" style={{ boxShadow: '0 4px 6px -1px rgba(94, 94, 94, 0.3), 0 2px 4px -1px rgba(94, 94, 94, 0.2)', border: '2px solid #5E5E5E' }}>
             <h3 className="text-2xl font-semibold text-gray-900 mb-6">Analytics</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-800 rounded p-4 shadow-sm">
-                <p className="text-sm text-white mb-2">Total Teams</p>
-                <p className="text-3xl font-bold text-white">53</p>
+            <div className="grid grid-cols-2 grid-rows-2 gap-4" style={{ height: '240px', gridTemplateRows: '0.5fr 1fr', gridTemplateColumns: '1fr 1.2fr' }}>
+              {/* Large Card - Total Tickets */}
+              <div className="bg-gray-800 rounded-lg shadow-sm row-span-2 flex flex-col" style={{ padding: '16px 24px' }}>
+                <p className="text-sm text-white whitespace-nowrap mb-auto">Total Tickets</p>
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-5xl font-semibold text-white">53</p>
+                </div>
               </div>
-              <div className="bg-blue-500 rounded p-4 shadow-sm">
-                <p className="text-sm text-white mb-2">Unique Users</p>
-                <p className="text-3xl font-bold text-white">13</p>
+              {/* Top Right Card - Videos Posted */}
+              <div className="bg-blue-500 rounded-lg shadow-sm flex flex-col" style={{ padding: '16px 16px' }}>
+                <p className="text-sm text-white mb-auto whitespace-nowrap">Videos Posted</p>
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-5xl font-semibold text-white">13</p>
+                </div>
               </div>
-              <div className="bg-yellow-200 rounded p-4 col-span-2 shadow-sm">
-                <p className="text-sm text-gray-800 mb-2">Total Transactions</p>
-                <p className="text-3xl font-bold text-gray-800">101</p>
+              {/* Bottom Right Card - Total Transactions */}
+              <div className="bg-yellow-200 rounded-lg p-4 shadow-sm flex flex-col">
+                <p className="text-xs mb-auto whitespace-nowrap" style={{ color: '#8B4513' }}>Total Transactions</p>
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-5xl font-semibold" style={{ color: '#8B4513' }}>101</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+          </div>
+        </section>
+      </div>
     </div>
   )
 }

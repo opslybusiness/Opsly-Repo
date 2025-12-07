@@ -49,52 +49,52 @@ function DashboardLayout({ children, userName }) {
   return (
     <div className="min-h-screen flex bg-opsly-gray">
       {/* Sidebar */}
-      <div className="w-20 bg-blue-600 flex flex-col items-center py-6">
+      <div className="fixed left-0 top-0 h-screen w-14 flex flex-col items-center py-4" style={{ backgroundColor: '#1E1E1E' }}>
         <Link 
           to="/" 
-          className="w-12 h-12 bg-opsly-purple rounded-full flex items-center justify-center text-white text-xl font-bold mb-8 hover:bg-purple-700 transition cursor-pointer"
+          className="w-10 h-10 flex items-center justify-center mb-6 hover:opacity-80 transition cursor-pointer"
         >
-          Ö
+          <img src="/logo.png" alt="Opsly Logo" className="w-10 h-10 object-contain" />
         </Link>
-        <Link to="/customer-support" className={`mb-6 p-3 rounded-lg ${isActive('/customer-support') ? 'bg-blue-700' : 'hover:bg-blue-700'}`}>
-          <HiPhone className="text-2xl text-white" />
+        <Link to="/customer-support" className={`mb-4 p-2 rounded-lg ${isActive('/customer-support') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+          <HiPhone className="text-xl text-white" />
         </Link>
-        <Link to="/marketing" className={`mb-6 p-3 rounded-lg ${isActive('/marketing') ? 'bg-blue-700' : 'hover:bg-blue-700'}`}>
-          <HiChartBar className="text-2xl text-white" />
+        <Link to="/marketing" className={`mb-4 p-2 rounded-lg ${isActive('/marketing') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+          <HiChartBar className="text-xl text-white" />
         </Link>
-        <Link to="/finance" className={`mb-6 p-3 rounded-lg ${isActive('/finance') ? 'bg-blue-700' : 'hover:bg-blue-700'}`}>
-          <HiFolder className="text-2xl text-white" />
+        <Link to="/finance" className={`mb-4 p-2 rounded-lg ${isActive('/finance') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+          <HiFolder className="text-xl text-white" />
         </Link>
-        <Link to="/chatbot" className={`mb-6 p-3 rounded-lg ${isActive('/chatbot') ? 'bg-blue-700' : 'hover:bg-blue-700'}`}>
-          <HiChat className="text-2xl text-white" />
+        <Link to="/chatbot" className={`mb-4 p-2 rounded-lg ${isActive('/chatbot') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+          <HiChat className="text-xl text-white" />
         </Link>
         <div className="mt-auto">
-          <button className="mb-6 p-3 rounded-lg hover:bg-blue-700">
-            <HiCog className="text-2xl text-white" />
+          <button className="mb-4 p-2 rounded-lg hover:bg-gray-700">
+            <HiCog className="text-xl text-white" />
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col bg-opsly-dark">
+      <div className="flex-1 flex flex-col bg-opsly-dark ml-14">
         {/* Header */}
-        <header className="bg-opsly-dark px-8 py-6 flex items-center justify-between border-b border-gray-800">
-          <h2 className="text-xl text-white">
+        <header className="bg-opsly-dark px-5 py-4 flex items-center justify-between border-b border-gray-800">
+          <h2 className="text-lg text-white">
             Good Morning, <span className="text-opsly-purple">{displayName}</span>
           </h2>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/support-us')}
-              className="px-4 py-2 rounded-full bg-opsly-purple text-white text-sm font-medium hover:bg-purple-700 transition border border-purple-500/60"
+              className="px-3 py-1.5 rounded-full bg-opsly-purple text-white text-xs font-medium hover:bg-purple-700 transition border border-purple-500/60"
             >
               Support Us
             </button>
-            <FaSearch className="text-xl text-white cursor-pointer hover:text-gray-300 transition" />
-            <FaBell className="text-xl text-white cursor-pointer hover:text-gray-300 transition" />
+            <FaSearch className="text-lg text-white cursor-pointer hover:text-gray-300 transition" />
+            <FaBell className="text-lg text-white cursor-pointer hover:text-gray-300 transition" />
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-10 h-10 bg-opsly-purple rounded-full flex items-center justify-center text-white font-semibold hover:bg-purple-700 transition"
+                className="w-8 h-8 bg-opsly-purple rounded-full flex items-center justify-center text-white text-sm font-semibold hover:bg-purple-700 transition"
               >
                 {displayName.charAt(0).toUpperCase()}
               </button>
@@ -106,16 +106,16 @@ function DashboardLayout({ children, userName }) {
                     className="fixed inset-0 z-10" 
                     onClick={() => setShowUserMenu(false)}
                   ></div>
-                  <div className="absolute right-0 mt-2 w-48 bg-opsly-card rounded-lg shadow-lg py-2 z-20 border border-gray-700">
-                    <div className="px-4 py-2 border-b border-gray-700">
-                      <p className="text-white text-sm font-semibold">{displayName}</p>
+                  <div className="absolute right-0 mt-2 w-36 bg-opsly-card rounded-lg shadow-lg py-1.5 z-20 border border-gray-700">
+                    <div className="px-3 py-1.5 border-b border-gray-700">
+                      <p className="text-white text-xs font-semibold">{displayName}</p>
                       <p className="text-gray-400 text-xs">{user?.email}</p>
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 flex items-center gap-2 transition"
+                      className="w-full px-3 py-1.5 text-left text-red-400 hover:bg-gray-700 flex items-center gap-2 transition text-xs"
                     >
-                      <HiLogout className="text-lg" />
+                      <HiLogout className="text-base" />
                       <span>Sign Out</span>
                     </button>
                   </div>
@@ -126,7 +126,7 @@ function DashboardLayout({ children, userName }) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-5 overflow-y-auto">
           {children}
         </main>
       </div>

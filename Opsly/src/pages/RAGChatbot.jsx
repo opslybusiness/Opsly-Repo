@@ -284,7 +284,7 @@ function RAGChatbot() {
 
           {/* Chat Section */}
           <div className="lg:col-span-2 flex flex-col bg-opsly-card rounded-lg p-6">
-            <div className="flex-1 overflow-y-auto mb-4 space-y-4 min-h-0">
+            <div className="flex-1 overflow-y-auto mb-4 space-y-4 min-h-0 hide-scrollbar">
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <FaRobot className="text-6xl text-opsly-purple mb-4" />
