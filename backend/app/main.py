@@ -11,6 +11,7 @@ import requests
 from app.routes.facebook_analytics import router as analytics_router
 from app.routes.insta_analytics import router as insta_analytics_router
 from app.routes.post_scheduling import router as scheduling_router
+from app.routes.finance_forecasting import router as finance_forecasting_router
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -34,6 +35,7 @@ app.add_middleware(
 app.include_router(analytics_router)
 app.include_router(scheduling_router)
 app.include_router(insta_analytics_router)
+app.include_router(finance_forecasting_router)
 
 FB_APP_ID = os.getenv("FB_APP_ID")
 FB_APP_SECRET = os.getenv("FB_APP_SECRET")
