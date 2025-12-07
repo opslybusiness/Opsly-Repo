@@ -20,7 +20,7 @@ function SignupPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      navigate('/customer-support', { replace: true })
+      navigate('/marketing', { replace: true })
     }
   }, [isAuthenticated, authLoading, navigate])
 
@@ -35,7 +35,7 @@ function SignupPage() {
 
   // Redirect if authenticated
   if (isAuthenticated) {
-    return <Navigate to="/customer-support" replace />
+    return <Navigate to="/marketing" replace />
   }
 
   const handleSubmit = async (e) => {
@@ -205,7 +205,7 @@ function SignupPage() {
 
           {/* Continue With Google */}
           <button 
-            onClick={() => navigate('/customer-support')}
+            onClick={() => navigate('/marketing')}
             className="w-full py-3 bg-white text-opsly-dark rounded-lg font-semibold border border-gray-300 flex items-center justify-center gap-3 hover:bg-gray-50 transition">
             <FaGoogle className="text-xl" />
             Continue With Google

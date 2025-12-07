@@ -4,16 +4,28 @@ import { HiCalendar } from 'react-icons/hi'
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { getApiUrl } from '../config/api'
-import { getFacebookAnalytics, getInstagramAnalytics, postDynamic } from '../services/marketingService'
+import { postDynamic, getConnectionStatus } from '../services/marketingService'
 import { useAuth } from '../contexts/AuthContext'
+import { useMarketing } from '../contexts/MarketingContext'
 
 function MarketingDashboard() {
   const { userId, isAuthenticated } = useAuth()
+  const { 
+    fbPosts, 
+    instaPosts, 
+    isFbLoading, 
+    isInstaLoading, 
+    fbError, 
+    instaError, 
+    fetchFbAnalytics, 
+    fetchInstaAnalytics 
+  } = useMarketing()
+  
   const [selectedPlatform, setSelectedPlatform] = useState('facebook')
   const [connectionStatus, setConnectionStatus] = useState({
     facebook: false,
     linkedin: false,
-    instagram: true // Instagram is already connected
+    instagram: false
   })
   
   // Post scheduling form state
@@ -29,40 +41,33 @@ function MarketingDashboard() {
   const [isPosting, setIsPosting] = useState(false)
   const [postError, setPostError] = useState(null)
   const [postSuccess, setPostSuccess] = useState(null)
-  const [fbPosts, setFbPosts] = useState([])
-  const [isFbLoading, setIsFbLoading] = useState(true)
-  const [fbError, setFbError] = useState(null)
-  const [instaPosts, setInstaPosts] = useState([])
-  const [isInstaLoading, setIsInstaLoading] = useState(true)
-  const [instaError, setInstaError] = useState(null)
 
   useEffect(() => {
-    const fetchFbAnalytics = async () => {
+    const fetchConnectionStatus = async () => {
       try {
-        const data = await getFacebookAnalytics()
-        setFbPosts(data?.analytics || [])
-        // If backend returns connection info we can set it here later
+        const status = await getConnectionStatus()
+        setConnectionStatus(prev => ({
+          ...prev,
+          facebook: status.facebook || false,
+          instagram: status.instagram || false
+        }))
       } catch (error) {
-        setFbError(error.message || 'Failed to load Facebook analytics')
-      } finally {
-        setIsFbLoading(false)
+        console.error('Failed to fetch connection status:', error)
+        // Keep default values on error
       }
     }
 
-    const fetchInstaAnalytics = async () => {
-      try {
-        const data = await getInstagramAnalytics()
-        setInstaPosts(data?.analytics || [])
-      } catch (error) {
-        setInstaError(error.message || 'Failed to load Instagram analytics')
-      } finally {
-        setIsInstaLoading(false)
-      }
+    // Fetch connection status first
+    if (isAuthenticated && userId) {
+      fetchConnectionStatus()
     }
-
+    
+    // Fetch posts using context (will use cache if available)
+    // Only fetch on mount or when auth changes, not when fetch functions change
     fetchFbAnalytics()
     fetchInstaAnalytics()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, userId])
 
   const handleConnectFacebook = () => {
     // OAuth redirects require browser navigation, not fetch/axios
@@ -203,12 +208,19 @@ function MarketingDashboard() {
               <FaInstagram className="text-4xl" style={{ background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }} />
               <div>
                 <h3 className="text-xl font-semibold text-white">Instagram</h3>
-                <p className="text-sm text-green-400">Connected</p>
+                <p className={`text-sm ${connectionStatus.instagram ? 'text-green-400' : 'text-gray-400'}`}>
+                  {connectionStatus.instagram ? 'Connected' : 'Not Connected'}
+                </p>
               </div>
             </div>
-            <p className="text-gray-300 mb-4 text-sm">Your account is connected and ready to post</p>
-            <button className="w-full py-2 bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition">
-              Disconnect
+            <p className="text-gray-300 mb-4 text-sm">
+              {connectionStatus.instagram ? 'Your account is connected and ready to post' : 'Connect your account to start posting'}
+            </p>
+            <button 
+              disabled={connectionStatus.instagram}
+              className="w-full py-2 bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {connectionStatus.instagram ? 'Connected' : 'Connect Account'}
             </button>
           </div>
         </div>

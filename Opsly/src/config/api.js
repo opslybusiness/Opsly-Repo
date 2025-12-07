@@ -1,18 +1,15 @@
-// src/config/api.js
-// In development, use Vite proxy to avoid CORS issues
-// In production, use the full API URL
 
 // Check if we're in development mode
 // Vite sets MODE to 'development' in dev, 'production' in production builds
-// Also check hostname as a fallback for better detection
+
 const isDevelopment = 
   import.meta.env.MODE === 'development' || 
   (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('localhost')))
 
-// Determine the base URL:
+
 // 1. If VITE_API_BASE_URL is set, use it (works for both dev and prod)
 // 2. Otherwise, use '/api' which is proxied by Vite in dev and Vercel in production
-//    This avoids CORS issues by making requests appear to come from the same origin
+
 const getBaseUrl = () => {
   // Priority 1: Use environment variable if set (always takes precedence)
   const envApiUrl = import.meta.env.VITE_API_BASE_URL

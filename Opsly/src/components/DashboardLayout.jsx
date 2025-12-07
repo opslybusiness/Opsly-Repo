@@ -1,17 +1,37 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { HiPhone, HiChartBar, HiFolder, HiCog, HiClock, HiChat, HiLogout } from 'react-icons/hi'
 import { FaSearch, FaBell } from 'react-icons/fa'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { getConnectionStatus } from '../services/marketingService'
 
 function DashboardLayout({ children, userName }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, signOut } = useAuth()
+  const { user, signOut, isAuthenticated, userId } = useAuth()
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [userNameFromBackend, setUserNameFromBackend] = useState(null)
 
-  // Get user name from auth or fallback to prop or email
-  const displayName = userName || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
+  // Fetch user name from backend
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (isAuthenticated && userId) {
+        try {
+          const status = await getConnectionStatus()
+          if (status.name) {
+            setUserNameFromBackend(status.name)
+          }
+        } catch (error) {
+          console.error('Failed to fetch user name:', error)
+        }
+      }
+    }
+
+    fetchUserName()
+  }, [isAuthenticated, userId])
+
+  // Get user name from backend first, then prop, then auth, then fallback
+  const displayName = userNameFromBackend || userName || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
 
   const isActive = (path) => {
     return location.pathname.startsWith(path)
@@ -30,9 +50,12 @@ function DashboardLayout({ children, userName }) {
     <div className="min-h-screen flex bg-opsly-gray">
       {/* Sidebar */}
       <div className="w-20 bg-blue-600 flex flex-col items-center py-6">
-        <div className="w-12 h-12 bg-opsly-purple rounded-full flex items-center justify-center text-white text-xl font-bold mb-8">
+        <Link 
+          to="/" 
+          className="w-12 h-12 bg-opsly-purple rounded-full flex items-center justify-center text-white text-xl font-bold mb-8 hover:bg-purple-700 transition cursor-pointer"
+        >
           Ö
-        </div>
+        </Link>
         <Link to="/customer-support" className={`mb-6 p-3 rounded-lg ${isActive('/customer-support') ? 'bg-blue-700' : 'hover:bg-blue-700'}`}>
           <HiPhone className="text-2xl text-white" />
         </Link>
@@ -60,6 +83,12 @@ function DashboardLayout({ children, userName }) {
             Good Morning, <span className="text-opsly-purple">{displayName}</span>
           </h2>
           <div className="flex items-center gap-6">
+            <button
+              onClick={() => navigate('/support-us')}
+              className="px-4 py-2 rounded-full bg-opsly-purple text-white text-sm font-medium hover:bg-purple-700 transition border border-purple-500/60"
+            >
+              Support Us
+            </button>
             <FaSearch className="text-xl text-white cursor-pointer hover:text-gray-300 transition" />
             <FaBell className="text-xl text-white cursor-pointer hover:text-gray-300 transition" />
             <div className="relative">
@@ -106,4 +135,5 @@ function DashboardLayout({ children, userName }) {
 }
 
 export default DashboardLayout
+
 

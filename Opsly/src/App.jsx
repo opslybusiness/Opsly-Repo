@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { MarketingProvider } from './contexts/MarketingContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
@@ -12,12 +13,14 @@ import FinanceDashboard from './pages/FinanceDashboard'
 import FinanceForecast from './pages/FinanceForecast'
 import FinanceAnomaly from './pages/FinanceAnomaly'
 import RAGChatbot from './pages/RAGChatbot'
+import SupportUs from './pages/SupportUs'
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
+        <MarketingProvider>
+          <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
@@ -85,7 +88,16 @@ function App() {
               </ProtectedRoute>
             } 
           />
-        </Routes>
+          <Route 
+            path="/support-us" 
+            element={
+              <ProtectedRoute>
+                <SupportUs />
+              </ProtectedRoute>
+            } 
+          />
+          </Routes>
+        </MarketingProvider>
       </AuthProvider>
     </Router>
   )

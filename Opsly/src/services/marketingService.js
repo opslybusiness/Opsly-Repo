@@ -39,6 +39,13 @@ export const getInstagramAnalytics = async () => {
   })
 }
 
+export const getConnectionStatus = async () => {
+  // Check if user has session_token (Facebook/Instagram connection)
+  return apiClient('/user/connection-status', {
+    method: 'GET',
+  })
+}
+
 // Post scheduling function - uses FormData for file uploads
 export const postDynamic = async (formData) => {
   const { getApiUrl } = await import('../config/api')
