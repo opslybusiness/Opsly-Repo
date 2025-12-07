@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://marketing-minds-be.vercel.app',
+        target: 'http://localhost:8000',  // Local FastAPI backend - change this if your backend runs on a different port
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
