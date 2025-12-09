@@ -13,6 +13,7 @@ import FinanceDashboard from './pages/FinanceDashboard'
 import FinanceForecast from './pages/FinanceForecast'
 import FinanceAnomaly from './pages/FinanceAnomaly'
 import RAGChatbot from './pages/RAGChatbot'
+import CustomerChatbot from './pages/CustomerChatbot'
 import SupportUs from './pages/SupportUs'
 
 function App() {
@@ -87,6 +88,10 @@ function App() {
                 <RAGChatbot />
               </ProtectedRoute>
             } 
+          />
+          <Route 
+            path="/chat" 
+            element={<CustomerChatbot />} 
           />
           <Route 
             path="/support-us" 
