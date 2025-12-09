@@ -59,6 +59,12 @@ export const getChatSession = async (sessionId) => {
   return ragApiClient(`/chat/session/${sessionId}`)
 }
 
+export const listChatSessions = async () => {
+  return ragApiClient('/chat/sessions', {
+    method: 'GET',
+  })
+}
+
 export const sendChatMessage = async (sessionId, message, useRag = true) => {
   return ragApiClient('/chat/message', {
     method: 'POST',

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
-import { FaGoogle, FaCalendarAlt, FaEnvelope, FaVideo } from 'react-icons/fa'
-import { HiPhone, HiThumbUp, HiChartBar, HiUser } from 'react-icons/hi'
+import { FaGoogle, FaCalendarAlt, FaEnvelope, FaVideo, FaRobot } from 'react-icons/fa'
+import { HiPhone, HiThumbUp, HiChartBar, HiUser, HiChat } from 'react-icons/hi'
 
 function LandingPage() {
   return (
@@ -22,6 +22,10 @@ function LandingPage() {
           <nav className="flex items-center gap-8">
             <a href="#features" className="text-white hover:text-opsly-purple transition">Features</a>
             <a href="#about" className="text-white hover:text-opsly-purple transition">About Us</a>
+            <Link to="/chat" className="flex items-center gap-2 text-white hover:text-opsly-purple transition">
+              <HiChat className="text-lg" />
+              <span>Chat Support</span>
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">
@@ -48,9 +52,18 @@ function LandingPage() {
           <p className="text-xl text-gray-300 mb-12 text-center">
             Efficiently automate your business and boost productivity.
           </p>
-          <button className="px-8 py-4 bg-gradient-to-r from-opsly-purple to-purple-600 text-white rounded-lg text-lg font-semibold hover:opacity-90 transition">
-            Learn More
-          </button>
+          <div className="flex gap-4">
+            <Link 
+              to="/chat" 
+              className="px-8 py-4 bg-gradient-to-r from-opsly-purple to-purple-600 text-white rounded-lg text-lg font-semibold hover:opacity-90 transition flex items-center gap-2"
+            >
+              <FaRobot className="text-xl" />
+              <span>Chat with Support</span>
+            </Link>
+            <button className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg text-lg font-semibold hover:bg-white hover:text-opsly-dark transition">
+              Learn More
+            </button>
+          </div>
         </section>
 
         {/* Feature Cards */}
