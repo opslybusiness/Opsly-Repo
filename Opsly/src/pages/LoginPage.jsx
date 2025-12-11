@@ -13,13 +13,6 @@ function LoginPage() {
   const navigate = useNavigate()
   const { signIn, isAuthenticated, loading: authLoading } = useAuth()
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      navigate('/marketing', { replace: true })
-    }
-  }, [isAuthenticated, authLoading, navigate])
-
   // Show loading while checking auth
   if (authLoading) {
     return (
@@ -29,8 +22,14 @@ function LoginPage() {
     )
   }
 
-  // Redirect if authenticated
-  if (isAuthenticated) {
+  // Only redirect if authenticated AFTER loading is complete
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/marketing', { replace: true })
+    }
+  }, [authLoading, isAuthenticated, navigate])
+
+  if (!authLoading && isAuthenticated) {
     return <Navigate to="/marketing" replace />
   }
 
@@ -46,18 +45,21 @@ function LoginPage() {
     }
 
     try {
-      const { error: signInError } = await signIn(email, password)
+      const { error: signInError, data } = await signIn(email, password)
       
       if (signInError) {
         setError(signInError.message || 'Failed to sign in. Please check your credentials.')
+        setLoading(false)
+      } else if (data?.session) {
+        // Only redirect after successful login
+        navigate('/marketing', { replace: true })
       } else {
-        // Redirect to marketing dashboard
-        navigate('/marketing')
+        setError('Login failed. Please try again.')
+        setLoading(false)
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
       console.error('Login error:', err)
-    } finally {
       setLoading(false)
     }
   }
@@ -73,7 +75,7 @@ function LoginPage() {
   }
 
   return (
-    <div className="h-screen flex bg-opsly-dark relative overflow-hidden px-16">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-opsly-dark relative overflow-hidden px-4 sm:px-8 md:px-16">
       {/* Vertical Lines Background Pattern */}
       <div 
         className="absolute inset-0 pointer-events-none opacity-20"
@@ -83,17 +85,17 @@ function LoginPage() {
         }}
       ></div>
       {/* Left Section - Login Form */}
-      <div className="flex-1 p-8 flex flex-col justify-center items-end relative overflow-y-auto z-10 pr-8">
+      <div className="flex-1 p-4 sm:p-6 md:p-8 flex flex-col justify-center items-center lg:items-end relative overflow-y-auto z-10 lg:pr-8">
 
-        <div className="relative z-10 max-w-md w-full">
+        <div className="relative z-10 max-w-md w-full min-w-0 px-4">
           {/* Logo */}
-          <div className="text-2xl font-bold text-white mb-12">
+          <div className="text-xl sm:text-2xl font-bold text-white mb-8 sm:mb-10 md:mb-12">
             <span className="text-opsly-purple">Ö</span>psly
           </div>
 
           {/* Welcome Message */}
-          <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="mb-8" style={{ color: '#FEF08A' }}>Please enter your username and password</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Welcome Back</h1>
+          <p className="mb-6 sm:mb-8 text-sm sm:text-base" style={{ color: '#FEF08A' }}>Please enter your username and password</p>
 
           {/* Error Message */}
           {error && (
@@ -162,16 +164,16 @@ function LoginPage() {
             <div className="flex-1 border-t border-gray-600"></div>
           </div>
 
-          {/* Continue With Google */}
+            {/* Continue With Google */}
           <button 
             onClick={() => navigate('/marketing')}
-            className="w-full py-3 bg-white text-opsly-dark rounded-lg font-semibold border border-gray-300 flex items-center justify-center gap-3 hover:bg-gray-50 transition">
-            <FaGoogle className="text-xl" />
-            Continue With Google
+            className="w-full py-3 bg-white text-opsly-dark rounded-lg font-semibold border border-gray-300 flex items-center justify-center gap-2 sm:gap-3 hover:bg-gray-50 transition text-sm sm:text-base">
+            <FaGoogle className="text-lg sm:text-xl flex-shrink-0" />
+            <span>Continue With Google</span>
           </button>
 
           {/* Sign Up Link */}
-          <p className="text-center mt-6 text-gray-400">
+          <p className="text-center mt-6 text-sm sm:text-base text-gray-400">
             Don't have an account?{' '}
             <Link to="/signup" className="text-opsly-purple hover:underline">Sign Up</Link>
           </p>
@@ -179,7 +181,7 @@ function LoginPage() {
       </div>
 
       {/* Right Section - Illustration */}
-      <div className="flex-1 flex flex-col justify-center items-end relative overflow-hidden py-8 z-10 pr-8">
+      <div className="hidden lg:flex flex-1 flex-col justify-center items-end relative overflow-hidden py-8 z-10 pr-8">
         <div className="relative flex items-center justify-center w-full h-full py-8">
           <img src="/Frame 70.png" alt="Illustration" className="object-contain max-w-full max-h-full" />
         </div>

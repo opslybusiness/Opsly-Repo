@@ -153,108 +153,111 @@ function FinanceAnomaly() {
 
   return (
     <DashboardLayout userName="Amanda">
-      <div>
-        <Link to="/finance" className="text-opsly-purple mb-4 inline-block">← Back</Link>
-        <div className="flex items-center justify-between mb-2">
+      <div className="min-w-0 max-w-full">
+        <Link to="/finance" className="text-sm sm:text-base text-opsly-purple mb-3 sm:mb-4 inline-block hover:underline">← Back</Link>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2">Anomaly Detection</h1>
-            <p className="text-gray-400 mb-8">AI-powered fraud detection for transactions</p>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2">Anomaly Detection</h1>
+            <p className="text-sm sm:text-base text-gray-400 mb-4 sm:mb-8">AI-powered fraud detection for transactions</p>
           </div>
           <button
             onClick={fetchFraudHistory}
-            className="px-4 py-2 bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-2"
+            className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition flex items-center justify-center gap-2 self-start sm:self-auto"
           >
-            <HiRefresh className="text-xl" />
+            <HiRefresh className="text-lg sm:text-xl flex-shrink-0" />
             Refresh
           </button>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg">
+          <div className="mb-4 p-3 sm:p-4 text-sm sm:text-base bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg">
             {error}
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4 mb-8">
+        <div className="flex flex-wrap gap-2 sm:gap-4 mb-6 sm:mb-8">
           <button
             onClick={() => setShowCheckModal(true)}
-            className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-2"
+            className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-orange-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2"
           >
-            <HiPlus className="text-xl" />
-            Check Transaction
+            <HiPlus className="text-lg sm:text-xl flex-shrink-0" />
+            <span className="hidden sm:inline">Check Transaction</span>
+            <span className="sm:hidden">Check</span>
           </button>
           <button
             onClick={() => setShowUploadModal(true)}
-            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-2"
+            className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-blue-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2"
           >
-            <HiDocumentText className="text-xl" />
-            Batch Check CSV
+            <HiDocumentText className="text-lg sm:text-xl flex-shrink-0" />
+            <span className="hidden sm:inline">Batch Check CSV</span>
+            <span className="sm:hidden">CSV</span>
           </button>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-red-900 rounded-lg p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <HiExclamation className="text-2xl text-red-500" />
-              <p className="text-gray-300">High Risk</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-red-900 rounded-lg p-4 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2">
+              <HiExclamation className="text-xl sm:text-2xl text-red-500 flex-shrink-0" />
+              <p className="text-xs sm:text-sm text-gray-300">High Risk</p>
             </div>
-            <p className="text-4xl font-bold text-white">{highRiskCount}</p>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">{highRiskCount}</p>
           </div>
-          <div className="bg-orange-900 rounded-lg p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <HiExclamation className="text-2xl text-orange-500" />
-              <p className="text-gray-300">Medium Risk</p>
+          <div className="bg-orange-900 rounded-lg p-4 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2">
+              <HiExclamation className="text-xl sm:text-2xl text-orange-500 flex-shrink-0" />
+              <p className="text-xs sm:text-sm text-gray-300">Medium Risk</p>
             </div>
-            <p className="text-4xl font-bold text-white">{mediumRiskCount}</p>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">{mediumRiskCount}</p>
           </div>
-          <div className="bg-opsly-card rounded-lg p-6">
-            <p className="text-gray-400 mb-2">Fraudulent</p>
-            <p className="text-4xl font-bold text-white">{summary.fraud_count}</p>
-            <p className="text-sm text-gray-500 mt-1">out of {summary.total_count} total</p>
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
+            <p className="text-xs sm:text-sm text-gray-400 mb-2">Fraudulent</p>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">{summary.fraud_count}</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">out of {summary.total_count} total</p>
           </div>
-          <div className="bg-opsly-card rounded-lg p-6">
-            <p className="text-gray-400 mb-2">Amount at Risk</p>
-            <p className="text-4xl font-bold text-white">{formatCurrency(totalAmountAtRisk)}</p>
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
+            <p className="text-xs sm:text-sm text-gray-400 mb-2">Amount at Risk</p>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">{formatCurrency(totalAmountAtRisk)}</p>
           </div>
         </div>
 
         {/* Detected Anomalies Table */}
-        <div className="bg-opsly-card rounded-lg p-6">
-          <h2 className="text-2xl font-semibold text-white mb-2">Fraud Detection History</h2>
-          <p className="text-gray-400 mb-6">All transactions analyzed by AI fraud detection</p>
+        <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-semibold text-white mb-1 sm:mb-2">Fraud Detection History</h2>
+          <p className="text-sm sm:text-base text-gray-400 mb-4 sm:mb-6">All transactions analyzed by AI fraud detection</p>
 
           {loading ? (
-            <div className="text-center py-8 text-gray-400">Loading...</div>
+            <div className="text-center py-8 text-sm sm:text-base text-gray-400">Loading...</div>
           ) : detections.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">No fraud detections found. Check a transaction to get started.</div>
+            <div className="text-center py-8 text-sm sm:text-base text-gray-400">No fraud detections found. Check a transaction to get started.</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto -mx-4 sm:mx-0 max-w-full">
+              <div className="inline-block min-w-full align-middle px-4 sm:px-0 max-w-full">
+                <table className="min-w-full max-w-full">
                 <thead>
                   <tr className="border-b border-gray-700">
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Date</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Transaction ID</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Amount</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Merchant</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">State</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Status</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Risk Level</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Probability</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold">Date</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold hidden md:table-cell">Transaction ID</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold">Amount</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold hidden lg:table-cell">Merchant</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold hidden xl:table-cell">State</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold">Status</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold">Risk</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold">Prob.</th>
                   </tr>
                 </thead>
                 <tbody>
                   {detections.map((detection) => (
                     <tr key={detection.id} className="border-b border-gray-800 hover:bg-opsly-dark transition">
-                      <td className="py-4 px-4 text-gray-300">{formatDate(detection.transaction_date)}</td>
-                      <td className="py-4 px-4 text-white font-mono text-sm">{detection.transaction_id || 'N/A'}</td>
-                      <td className="py-4 px-4 text-white">{formatCurrency(detection.amount)}</td>
-                      <td className="py-4 px-4 text-gray-300">{detection.merchant_name || 'N/A'}</td>
-                      <td className="py-4 px-4 text-gray-300">{detection.merchant_state || 'N/A'}</td>
-                      <td className="py-4 px-4">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm text-gray-300">{formatDate(detection.transaction_date)}</td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm text-white font-mono hidden md:table-cell truncate max-w-[120px]">{detection.transaction_id || 'N/A'}</td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm text-white">{formatCurrency(detection.amount)}</td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm text-gray-300 hidden lg:table-cell truncate max-w-[100px]">{detection.merchant_name || 'N/A'}</td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm text-gray-300 hidden xl:table-cell">{detection.merchant_state || 'N/A'}</td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${
                           detection.is_fraud === 1 
                             ? 'bg-red-500/20 text-red-400 border border-red-500/50' 
                             : 'bg-green-500/20 text-green-400 border border-green-500/50'
@@ -262,18 +265,19 @@ function FinanceAnomaly() {
                           {detection.is_fraud === 1 ? 'Fraud' : 'Legitimate'}
                         </span>
                       </td>
-                      <td className="py-4 px-4">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold border ${getRiskBadge(detection.fraud_risk)}`}>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold border whitespace-nowrap ${getRiskBadge(detection.fraud_risk)}`}>
                           {detection.fraud_risk.toUpperCase()}
                         </span>
                       </td>
-                      <td className={`py-4 px-4 font-semibold ${getRiskColor(detection.fraud_probability)}`}>
+                      <td className={`py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm font-semibold ${getRiskColor(detection.fraud_probability)}`}>
                         {(detection.fraud_probability * 100).toFixed(2)}%
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>
@@ -281,10 +285,10 @@ function FinanceAnomaly() {
 
       {/* Check Transaction Modal */}
       {showCheckModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-opsly-card rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-2xl font-bold text-white">Check Transaction</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-white">Check Transaction</h3>
               <button
                 onClick={() => {
                   setShowCheckModal(false)
@@ -388,10 +392,10 @@ function FinanceAnomaly() {
 
       {/* Upload CSV Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-opsly-card rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-2xl font-bold text-white">Batch Check CSV</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-white">Batch Check CSV</h3>
               <button
                 onClick={() => {
                   setShowUploadModal(false)
