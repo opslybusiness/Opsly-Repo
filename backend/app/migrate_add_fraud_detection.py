@@ -22,3 +22,5 @@ def migrate_add_fraud_detection():
 if __name__ == "__main__":
     migrate_add_fraud_detection()
 
+
+

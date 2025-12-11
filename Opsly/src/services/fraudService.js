@@ -74,3 +74,5 @@ export const getFraudDetectionHistory = async (params = {}) => {
   return apiClient(endpoint, { method: 'GET' })
 }
 
+
+

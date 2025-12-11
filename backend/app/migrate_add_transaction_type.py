@@ -37,3 +37,5 @@ def migrate_add_transaction_type():
 if __name__ == "__main__":
     migrate_add_transaction_type()
 
+
+
