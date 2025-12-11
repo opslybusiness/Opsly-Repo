@@ -97,7 +97,6 @@ def post_dynamic(
 
         fb_photo_id = fb_upload["id"]
 
-        # Instagram requires an image URL, the FB upload response gives URL only for some apps
         ig_image_url_resp = requests.get(
             f"https://graph.facebook.com/v24.0/{fb_photo_id}",
             params={"fields": "images", "access_token": page_token}
@@ -155,9 +154,6 @@ def post_dynamic(
             else:
                 return {"error": "Instagram requires an image", "note": "IG cannot post text-only"}
 
-            if not post_now:
-                container_payload["scheduled_publish_time"] = scheduled_time
-
             container = requests.post(
                 f"https://graph.facebook.com/v24.0/{ig_user_id}/media",
                 data=container_payload
@@ -168,15 +164,18 @@ def post_dynamic(
             else:
                 container_id = container["id"]
 
-                # Step 2: Publish the container (only for immediate posting)
-                if post_now:
-                    publish = requests.post(
-                        f"https://graph.facebook.com/v24.0/{ig_user_id}/media_publish",
-                        data={"creation_id": container_id, "access_token": page_token}
-                    ).json()
-                    results["instagram"] = publish
-                else:
-                    results["instagram"] = container  # scheduled container
+                # Step 2: Publish (immediately or scheduled)
+                publish_payload = {"creation_id": container_id, "access_token": page_token}
+
+                if not post_now:
+                    publish_payload["scheduled_publish_time"] = scheduled_time
+
+                publish = requests.post(
+                    f"https://graph.facebook.com/v24.0/{ig_user_id}/media_publish",
+                    data=publish_payload
+                ).json()
+
+                results["instagram"] = publish
 
     return {
         "status": "success",
