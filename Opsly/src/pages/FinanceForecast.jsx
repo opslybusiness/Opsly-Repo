@@ -106,7 +106,7 @@ function FinanceForecast() {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg">
+          <div className="mb-4 p-3 sm:p-4 text-sm sm:text-base bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg">
             {error}
           </div>
         )}
@@ -136,21 +136,21 @@ function FinanceForecast() {
             <p className="text-4xl font-bold text-white mb-2">
               {loading ? '...' : `${forecastData?.forecast_months || 0} Month(s)`}
             </p>
-            <p className="text-gray-400 text-sm">Based on {forecastDays} days</p>
+            <p className="text-xs sm:text-sm text-gray-400">Based on {forecastDays} days</p>
           </div>
-          <div className="bg-opsly-card rounded-lg p-6">
-            <p className="text-gray-400 mb-2">Forecast Range</p>
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
+            <p className="text-xs sm:text-sm text-gray-400 mb-2">Forecast Range</p>
             {nextMonthPrediction ? (
               <>
-                <p className="text-lg text-white mb-1">
+                <p className="text-sm sm:text-base md:text-lg text-white mb-1">
                   Lower: {formatCurrency(nextMonthPrediction.lower_bound)}
                 </p>
-                <p className="text-lg text-white">
+                <p className="text-sm sm:text-base md:text-lg text-white">
                   Upper: {formatCurrency(nextMonthPrediction.upper_bound)}
                 </p>
               </>
             ) : (
-              <p className="text-gray-400 text-sm">No forecast available</p>
+              <p className="text-xs sm:text-sm text-gray-400">No forecast available</p>
             )}
           </div>
         </div>
@@ -163,14 +163,14 @@ function FinanceForecast() {
               <button
                 onClick={fetchForecast}
                 disabled={loading}
-                className="px-4 py-2 bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 flex items-center gap-2"
+                className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
                 title="Refresh forecast"
               >
-                <HiRefresh className={`text-lg ${loading ? 'animate-spin' : ''}`} />
+                <HiRefresh className={`text-base sm:text-lg flex-shrink-0 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400 mr-2">Forecast</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs sm:text-sm text-gray-400 mr-1 sm:mr-2 whitespace-nowrap">Forecast</span>
                 {[30, 90, 180, 270].map((days) => {
                   const months = Math.ceil(days / 30)
                   return (
@@ -178,7 +178,7 @@ function FinanceForecast() {
                       key={days}
                       onClick={() => setForecastDays(days)}
                       disabled={loading}
-                      className={`px-4 py-2 rounded transition ${
+                      className={`px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded transition ${
                         forecastDays === days
                           ? 'bg-opsly-purple text-white'
                           : 'bg-opsly-dark text-gray-400 hover:bg-opacity-50'
@@ -193,13 +193,14 @@ function FinanceForecast() {
           </div>
 
           {loading ? (
-            <div className="text-center py-8 text-gray-400">Loading forecast data...</div>
+            <div className="text-center py-8 text-sm sm:text-base text-gray-400">Loading forecast data...</div>
           ) : chartData.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               No data available. Add expense transactions to generate forecasts.
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={400}>
+            <div className="w-full" style={{ height: '300px', minHeight: '300px' }}>
+              <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis
@@ -264,22 +265,24 @@ function FinanceForecast() {
                 />
               </LineChart>
             </ResponsiveContainer>
+            </div>
           )}
         </div>
 
         {/* Forecast Table */}
         {forecastData && forecastData.forecast && forecastData.forecast.length > 0 && (
-          <div className="bg-opsly-card rounded-lg p-6 mt-8">
-            <h2 className="text-2xl font-semibold text-white mb-4">Detailed Forecast</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6 mt-6 sm:mt-8">
+            <h2 className="text-xl sm:text-2xl font-semibold text-white mb-3 sm:mb-4">Detailed Forecast</h2>
+            <div className="overflow-x-auto -mx-4 sm:mx-0 max-w-full">
+              <div className="inline-block min-w-full align-middle px-4 sm:px-0 max-w-full">
+                <table className="min-w-full max-w-full">
                 <thead>
                   <tr className="border-b border-gray-700">
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Month</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Forecasted Amount</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Lower Bound</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Upper Bound</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Range</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold">Month</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold">Forecasted</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold hidden md:table-cell">Lower Bound</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold hidden md:table-cell">Upper Bound</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 font-semibold hidden lg:table-cell">Range</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -287,19 +290,19 @@ function FinanceForecast() {
                     const range = item.upper_bound - item.lower_bound
                     return (
                       <tr key={idx} className="border-b border-gray-800 hover:bg-opsly-dark transition">
-                        <td className="py-4 px-4 text-gray-300">
+                        <td className="py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm text-gray-300">
                           {formatMonthLabel(item.date)}
                         </td>
-                        <td className="py-4 px-4 text-green-500 font-semibold">
+                        <td className="py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm text-green-500 font-semibold">
                           {formatCurrency(item.forecasted_amount)}
                         </td>
-                        <td className="py-4 px-4 text-gray-400">
+                        <td className="py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 hidden md:table-cell">
                           {formatCurrency(item.lower_bound)}
                         </td>
-                        <td className="py-4 px-4 text-gray-400">
+                        <td className="py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 hidden md:table-cell">
                           {formatCurrency(item.upper_bound)}
                         </td>
-                        <td className="py-4 px-4 text-gray-400">
+                        <td className="py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm text-gray-400 hidden lg:table-cell">
                           {formatCurrency(range)}
                         </td>
                       </tr>
@@ -307,6 +310,7 @@ function FinanceForecast() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}

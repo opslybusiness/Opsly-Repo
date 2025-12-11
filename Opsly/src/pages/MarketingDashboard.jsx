@@ -9,7 +9,26 @@ import { useAuth } from '../contexts/AuthContext'
 import { useMarketing } from '../contexts/MarketingContext'
 
 function MarketingDashboard() {
-  const { userId, isAuthenticated } = useAuth()
+  const { userId, isAuthenticated, loading: authLoading } = useAuth()
+  
+  // Try to get marketing context, but handle errors gracefully
+  let marketingContext
+  try {
+    marketingContext = useMarketing()
+  } catch (error) {
+    console.error('Marketing context error:', error)
+    marketingContext = {
+      fbPosts: [],
+      instaPosts: [],
+      isFbLoading: false,
+      isInstaLoading: false,
+      fbError: null,
+      instaError: null,
+      fetchFbAnalytics: () => Promise.resolve({ analytics: [] }),
+      fetchInstaAnalytics: () => Promise.resolve({ analytics: [] })
+    }
+  }
+
   const { 
     fbPosts, 
     instaPosts, 
@@ -19,7 +38,7 @@ function MarketingDashboard() {
     instaError, 
     fetchFbAnalytics, 
     fetchInstaAnalytics 
-  } = useMarketing()
+  } = marketingContext
   
   const [selectedPlatform, setSelectedPlatform] = useState('facebook')
   const [connectionStatus, setConnectionStatus] = useState({
@@ -57,17 +76,23 @@ function MarketingDashboard() {
       }
     }
 
-    // Fetch connection status first
-    if (isAuthenticated && userId) {
+    // Fetch connection status first - only if authenticated
+    if (!authLoading && isAuthenticated && userId) {
       fetchConnectionStatus()
     }
     
     // Fetch posts using context (will use cache if available)
-    // Only fetch on mount or when auth changes, not when fetch functions change
-    fetchFbAnalytics()
-    fetchInstaAnalytics()
+    // Only fetch if authenticated and not loading
+    if (!authLoading && isAuthenticated) {
+      try {
+        fetchFbAnalytics()
+        fetchInstaAnalytics()
+      } catch (error) {
+        console.error('Error fetching analytics:', error)
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, userId])
+  }, [authLoading, isAuthenticated, userId])
 
   const handleConnectFacebook = () => {
     // OAuth redirects require browser navigation, not fetch/axios
@@ -158,30 +183,43 @@ function MarketingDashboard() {
     setPostSuccess(null)
   }
 
+  // Show loading if auth is still loading
+  if (authLoading) {
+    return (
+      <DashboardLayout userName="User">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="text-white text-xl mb-4">Loading...</div>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   return (
     <DashboardLayout userName="Alexa">
-      <div>
-        <h1 className="text-4xl font-bold text-white mb-2">Marketing</h1>
-        <p className="text-gray-400 mb-8">Connect Your Accounts</p>
+      <div className="min-w-0 max-w-full">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2">Marketing</h1>
+        <p className="text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Connect Your Accounts</p>
 
         {/* Connect Your Accounts Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
           {/* Facebook Card */}
-          <div className="bg-opsly-card rounded-lg p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <FaFacebook className="text-4xl text-blue-500" />
-              <div>
-                <h3 className="text-xl font-semibold text-white">Facebook</h3>
-                <p className={`text-sm ${connectionStatus.facebook ? 'text-green-400' : 'text-gray-400'}`}>
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+              <FaFacebook className="text-3xl sm:text-4xl text-blue-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <h3 className="text-lg sm:text-xl font-semibold text-white">Facebook</h3>
+                <p className={`text-xs sm:text-sm ${connectionStatus.facebook ? 'text-green-400' : 'text-gray-400'}`}>
                   {connectionStatus.facebook ? 'Connected' : 'Not Connected'}
                 </p>
               </div>
             </div>
-            <p className="text-gray-300 mb-4 text-sm">Connect your account to start posting</p>
+            <p className="text-xs sm:text-sm text-gray-300 mb-3 sm:mb-4">Connect your account to start posting</p>
             <button 
               onClick={handleConnectFacebook}
               disabled={connectionStatus.facebook}
-              className="w-full py-2 bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2 text-sm sm:text-base bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {connectionStatus.facebook ? 'Connected' : 'Connect Account'}
             </button>
@@ -203,22 +241,22 @@ function MarketingDashboard() {
           </div> */}
 
           {/* Instagram Card */}
-          <div className="bg-opsly-card rounded-lg p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <FaInstagram className="text-4xl" style={{ background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }} />
-              <div>
-                <h3 className="text-xl font-semibold text-white">Instagram</h3>
-                <p className={`text-sm ${connectionStatus.instagram ? 'text-green-400' : 'text-gray-400'}`}>
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+              <FaInstagram className="text-3xl sm:text-4xl flex-shrink-0" style={{ background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }} />
+              <div className="min-w-0">
+                <h3 className="text-lg sm:text-xl font-semibold text-white">Instagram</h3>
+                <p className={`text-xs sm:text-sm ${connectionStatus.instagram ? 'text-green-400' : 'text-gray-400'}`}>
                   {connectionStatus.instagram ? 'Connected' : 'Not Connected'}
                 </p>
               </div>
             </div>
-            <p className="text-gray-300 mb-4 text-sm">
+            <p className="text-xs sm:text-sm text-gray-300 mb-3 sm:mb-4">
               {connectionStatus.instagram ? 'Your account is connected and ready to post' : 'Connect your account to start posting'}
             </p>
             <button 
               disabled={connectionStatus.instagram}
-              className="w-full py-2 bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2 text-sm sm:text-base bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {connectionStatus.instagram ? 'Connected' : 'Connect Account'}
             </button>
@@ -226,89 +264,89 @@ function MarketingDashboard() {
         </div>
 
         {/* Create New Post Section */}
-        <div className="bg-opsly-card rounded-lg p-6 mb-12">
-          <h2 className="text-2xl font-semibold text-white mb-2">Create New Post</h2>
-          <p className="text-gray-400 mb-6">Select platforms and schedule your post</p>
+        <div className="bg-opsly-card rounded-lg p-4 sm:p-6 mb-8 sm:mb-12">
+          <h2 className="text-xl sm:text-2xl font-semibold text-white mb-1 sm:mb-2">Create New Post</h2>
+          <p className="text-sm sm:text-base text-gray-400 mb-4 sm:mb-6">Select platforms and schedule your post</p>
           
           {postError && (
-            <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-300">
+            <div className="mb-4 p-3 text-sm sm:text-base bg-red-500/20 border border-red-500 rounded-lg text-red-300">
               {postError}
             </div>
           )}
           
           {postSuccess && (
-            <div className="mb-4 p-3 bg-green-500/20 border border-green-500 rounded-lg text-green-300">
+            <div className="mb-4 p-3 text-sm sm:text-base bg-green-500/20 border border-green-500 rounded-lg text-green-300">
               {postSuccess}
             </div>
           )}
 
-          <form onSubmit={handlePostSubmit} className="space-y-6">
+          <form onSubmit={handlePostSubmit} className="space-y-4 sm:space-y-6 min-w-0">
             {/* Platform Selection */}
             <div>
-              <label className="block text-white mb-3">Select Platforms</label>
-              <div className="flex gap-4">
+              <label className="block text-sm sm:text-base text-white mb-2 sm:mb-3">Select Platforms</label>
+              <div className="flex flex-wrap gap-3 sm:gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={postForm.postToFacebook}
                     onChange={(e) => setPostForm({ ...postForm, postToFacebook: e.target.checked })}
-                    className="w-5 h-5 rounded"
+                    className="w-4 h-4 sm:w-5 sm:h-5 rounded flex-shrink-0"
                   />
-                  <FaFacebook className="text-xl text-blue-500" />
-                  <span className="text-gray-300">Facebook</span>
+                  <FaFacebook className="text-lg sm:text-xl text-blue-500 flex-shrink-0" />
+                  <span className="text-sm sm:text-base text-gray-300">Facebook</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={postForm.postToInstagram}
                     onChange={(e) => setPostForm({ ...postForm, postToInstagram: e.target.checked })}
-                    className="w-5 h-5 rounded"
+                    className="w-4 h-4 sm:w-5 sm:h-5 rounded flex-shrink-0"
                   />
-                  <FaInstagram className="text-xl" style={{ background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }} />
-                  <span className="text-gray-300">Instagram</span>
+                  <FaInstagram className="text-lg sm:text-xl flex-shrink-0" style={{ background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }} />
+                  <span className="text-sm sm:text-base text-gray-300">Instagram</span>
                 </label>
               </div>
             </div>
 
             {/* Message */}
             <div>
-              <label className="block text-white mb-2">Message (Optional)</label>
+              <label className="block text-sm sm:text-base text-white mb-2">Message (Optional)</label>
               <textarea
                 value={postForm.message}
                 onChange={(e) => setPostForm({ ...postForm, message: e.target.value })}
                 placeholder="What's on your mind?"
-                className="w-full px-4 py-3 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple resize-none"
+                className="w-full max-w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple resize-none min-w-0"
                 rows="4"
               />
             </div>
 
             {/* Image Upload */}
             <div>
-              <label className="block text-white mb-2">Image (Optional)</label>
+              <label className="block text-sm sm:text-base text-white mb-2">Image (Optional)</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => setPostForm({ ...postForm, image: e.target.files[0] })}
-                className="w-full px-4 py-2 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-opsly-purple file:text-white hover:file:bg-opacity-90"
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-lg file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-opsly-purple file:text-white hover:file:bg-opacity-90"
               />
               {postForm.image && (
-                <p className="mt-2 text-sm text-gray-400">Selected: {postForm.image.name}</p>
+                <p className="mt-2 text-xs sm:text-sm text-gray-400 truncate">Selected: {postForm.image.name}</p>
               )}
             </div>
 
             {/* Post Now vs Schedule */}
             <div>
-              <label className="block text-white mb-3">Post Timing</label>
-              <div className="flex gap-4 mb-4">
+              <label className="block text-sm sm:text-base text-white mb-2 sm:mb-3">Post Timing</label>
+              <div className="flex gap-3 sm:gap-4 mb-3 sm:mb-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
                     name="postTiming"
                     checked={postForm.postNow}
                     onChange={() => setPostForm({ ...postForm, postNow: true, scheduleMinutes: null, scheduledDatetime: '' })}
-                    className="w-4 h-4"
+                    className="w-4 h-4 flex-shrink-0"
                   />
-                  <span className="text-gray-300">Post Now</span>
+                  <span className="text-sm sm:text-base text-gray-300">Post Now</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -316,28 +354,28 @@ function MarketingDashboard() {
                     name="postTiming"
                     checked={!postForm.postNow}
                     onChange={() => setPostForm({ ...postForm, postNow: false })}
-                    className="w-4 h-4"
+                    className="w-4 h-4 flex-shrink-0"
                   />
-                  <span className="text-gray-300">Schedule</span>
+                  <span className="text-sm sm:text-base text-gray-300">Schedule</span>
                 </label>
               </div>
 
               {!postForm.postNow && (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div>
-                    <label className="block text-gray-300 mb-2 text-sm">Schedule in minutes (Optional)</label>
+                    <label className="block text-xs sm:text-sm text-gray-300 mb-2">Schedule in minutes (Optional)</label>
                     <input
                       type="number"
                       value={postForm.scheduleMinutes || ''}
                       onChange={(e) => setPostForm({ ...postForm, scheduleMinutes: e.target.value ? parseInt(e.target.value) : null, scheduledDatetime: '' })}
                       placeholder="e.g., 30"
                       min="1"
-                      className="w-full px-4 py-2 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
+                      className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
                     />
                   </div>
-                  <div className="text-gray-400 text-sm text-center">OR</div>
+                  <div className="text-xs sm:text-sm text-gray-400 text-center">OR</div>
                   <div>
-                    <label className="block text-gray-300 mb-2 text-sm">Schedule at specific date & time</label>
+                    <label className="block text-xs sm:text-sm text-gray-300 mb-2">Schedule at specific date & time</label>
                     <input
                       type="datetime-local"
                       value={postForm.scheduledDatetime ? postForm.scheduledDatetime.slice(0, 16) : ''}
@@ -347,7 +385,7 @@ function MarketingDashboard() {
                         const formatted = dt ? `${dt}:00` : ''
                         setPostForm({ ...postForm, scheduledDatetime: formatted, scheduleMinutes: null })
                       }}
-                      className="w-full px-4 py-2 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
+                      className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
                     />
                     <p className="mt-1 text-xs text-gray-500">Format: YYYY-MM-DDTHH:MM:SS</p>
                   </div>
@@ -356,11 +394,11 @@ function MarketingDashboard() {
             </div>
 
             {/* Submit Button */}
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 type="submit"
                 disabled={isPosting || (!postForm.postToFacebook && !postForm.postToInstagram)}
-                className="px-6 py-3 bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isPosting ? (
                   <>
@@ -371,7 +409,7 @@ function MarketingDashboard() {
                   'Post Now'
                 ) : (
                   <>
-                    <HiCalendar className="text-xl" />
+                    <HiCalendar className="text-lg sm:text-xl flex-shrink-0" />
                     Schedule Post
                   </>
                 )}
@@ -379,7 +417,7 @@ function MarketingDashboard() {
               <button
                 type="button"
                 onClick={handleResetForm}
-                className="px-6 py-3 bg-opsly-dark text-gray-300 rounded-lg hover:bg-opacity-90 transition border border-gray-700"
+                className="flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-opsly-dark text-gray-300 rounded-lg hover:bg-opacity-90 transition border border-gray-700"
               >
                 Reset
               </button>
@@ -389,8 +427,8 @@ function MarketingDashboard() {
 
         {/* Your Posts Section */}
         <div>
-          <h2 className="text-2xl font-semibold text-white mb-6">Your Posts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <h2 className="text-xl sm:text-2xl font-semibold text-white mb-4 sm:mb-6">Your Posts</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Post 1 */}
             <Link to="/marketing/post-analytics" className="bg-opsly-card rounded-lg overflow-hidden hover:opacity-90 transition cursor-pointer">
               <div className="relative">
@@ -432,16 +470,16 @@ function MarketingDashboard() {
         </div>
 
         {/* Facebook Analytics Section */}
-        <div className="mt-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold text-white">Facebook Posts</h2>
-            <p className="text-gray-400 text-sm">
+        <div className="mt-8 sm:mt-12">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4">
+            <h2 className="text-xl sm:text-2xl font-semibold text-white">Facebook Posts</h2>
+            <p className="text-xs sm:text-sm text-gray-400">
               {fbPosts.length} posts fetched from{' '}
               <span className="text-white font-medium">{connectionStatus.facebook ? 'connected' : 'your'}</span> page
             </p>
           </div>
 
-          <div className="bg-opsly-card rounded-lg p-6">
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
             {isFbLoading && (
               <p className="text-gray-400">Loading Facebook analytics...</p>
             )}
@@ -453,7 +491,7 @@ function MarketingDashboard() {
             )}
 
             {!isFbLoading && !fbError && fbPosts.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {fbPosts.map((post) => (
                   <a
                     key={post.post_id}
@@ -494,27 +532,27 @@ function MarketingDashboard() {
         </div>
 
         {/* Instagram Analytics Section */}
-        <div className="mt-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold text-white">Instagram Posts</h2>
-            <p className="text-gray-400 text-sm">
+        <div className="mt-8 sm:mt-12">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4">
+            <h2 className="text-xl sm:text-2xl font-semibold text-white">Instagram Posts</h2>
+            <p className="text-xs sm:text-sm text-gray-400">
               {instaPosts.length} posts fetched from Instagram
             </p>
           </div>
 
-          <div className="bg-opsly-card rounded-lg p-6">
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
             {isInstaLoading && (
-              <p className="text-gray-400">Loading Instagram analytics...</p>
+              <p className="text-sm sm:text-base text-gray-400">Loading Instagram analytics...</p>
             )}
             {instaError && (
-              <p className="text-red-400">Failed to load posts: {instaError}</p>
+              <p className="text-sm sm:text-base text-red-400">Failed to load posts: {instaError}</p>
             )}
             {!isInstaLoading && !instaError && instaPosts.length === 0 && (
-              <p className="text-gray-400">No Instagram posts found.</p>
+              <p className="text-sm sm:text-base text-gray-400">No Instagram posts found.</p>
             )}
 
             {!isInstaLoading && !instaError && instaPosts.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {instaPosts.map((post) => (
                   <a
                     key={post.post_id || post.timestamp}

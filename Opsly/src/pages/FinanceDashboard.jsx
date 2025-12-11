@@ -126,34 +126,39 @@ function FinanceDashboard() {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg">
+          <div className="mb-4 p-3 sm:p-4 text-sm sm:text-base bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg">
             {error}
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4 mb-8">
+        <div className="flex flex-wrap gap-2 sm:gap-4 mb-6 sm:mb-8">
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-2"
+            className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-green-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2"
           >
-            <HiPlus className="text-xl" />
-            Add Transaction
+            <HiPlus className="text-lg sm:text-xl flex-shrink-0" />
+            <span className="hidden sm:inline">Add Transaction</span>
+            <span className="sm:hidden">Add</span>
           </button>
           <button
             onClick={() => setShowUploadModal(true)}
-            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-2"
+            className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-blue-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2"
           >
-            <HiDocumentText className="text-xl" />
-            Upload CSV
+            <HiDocumentText className="text-lg sm:text-xl flex-shrink-0" />
+            <span className="hidden sm:inline">Upload CSV</span>
+            <span className="sm:hidden">CSV</span>
           </button>
-          <Link to="/finance/forecast" className="px-6 py-3 bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-2">
-            <HiChartBar className="text-xl" />
-            Modify Forecast
+          <Link to="/finance/forecast" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2">
+            <HiChartBar className="text-lg sm:text-xl flex-shrink-0" />
+            <span className="hidden sm:inline">Modify Forecast</span>
+            <span className="sm:hidden">Forecast</span>
           </Link>
-          <Link to="/finance/anomaly" className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-2">
-            <HiExclamation className="text-xl" />
-            Anomaly Detection
+          <Link to="/finance/anomaly" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-orange-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2">
+            <HiExclamation className="text-lg sm:text-xl flex-shrink-0" />
+            <span className="hidden md:inline">Anomaly Detection</span>
+            <span className="hidden sm:inline md:hidden">Anomaly</span>
+            <span className="sm:hidden">Anomaly</span>
           </Link>
         </div>
 
@@ -231,9 +236,9 @@ function FinanceDashboard() {
           </div>
 
           {loading ? (
-            <div className="text-center py-8 text-gray-400">Loading transactions...</div>
+            <div className="text-center py-8 text-sm sm:text-base text-gray-400">Loading transactions...</div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
+            <div className="text-center py-8 text-sm sm:text-base text-gray-400">
               No transactions found. Add your first transaction to get started!
             </div>
           ) : (
@@ -275,8 +280,8 @@ function FinanceDashboard() {
 
       {/* Add Transaction Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-opsly-card rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-2xl font-bold text-white">Add Expense</h3>
               <button
@@ -366,10 +371,10 @@ function FinanceDashboard() {
 
       {/* Upload CSV Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-opsly-card rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-2xl font-bold text-white">Upload CSV File</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-white">Upload CSV File</h3>
               <button
                 onClick={() => {
                   setShowUploadModal(false)
