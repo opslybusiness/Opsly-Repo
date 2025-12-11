@@ -661,11 +661,56 @@ def forecast_financial_data(
         # Add index regressor (sequential month number)
         prophet_df['index'] = range(1, len(prophet_df) + 1)
 
+        # Handle single month of data with simple forecast
         if len(prophet_df) < 2:
-            raise HTTPException(
-                status_code=400,
-                detail="Insufficient data. Need at least 2 months of expense data."
+            print(f"⚠️ Only {len(prophet_df)} month(s) of data. Using simple average-based forecast.")
+            
+            # Get the single month's data
+            monthly_avg = prophet_df['y'].iloc[0]
+            last_date = prophet_df['ds'].max()
+            
+            # Convert to Timestamp if needed
+            if not isinstance(last_date, pd.Timestamp):
+                last_date = pd.to_datetime(last_date)
+            
+            # Generate future dates
+            from pandas import DateOffset
+            next_month_start = last_date.replace(day=1) + DateOffset(months=1)
+            months_to_forecast = max(1, int(days / 30))
+            
+            future_dates = pd.date_range(
+                start=next_month_start,
+                periods=months_to_forecast,
+                freq='ME'
             )
+            
+            # Simple forecast: use the single month's average for all future months
+            forecast_results = []
+            for date_val in future_dates:
+                forecast_results.append({
+                    "date": date_val.strftime("%Y-%m"),
+                    "forecasted_amount": round(float(monthly_avg), 2),
+                    "lower_bound": round(float(monthly_avg * 0.5), 2),  # 50% lower
+                    "upper_bound": round(float(monthly_avg * 1.5), 2),  # 50% higher
+                })
+            
+            return {
+                "status": "success",
+                "forecast_days": days,
+                "forecast_months": months_to_forecast,
+                "forecast": forecast_results,
+                "summary": {
+                    "total_predicted": round(float(monthly_avg * months_to_forecast), 2),
+                    "average_monthly": round(float(monthly_avg), 2),
+                    "min_monthly": round(float(monthly_avg), 2),
+                    "max_monthly": round(float(monthly_avg), 2),
+                    "historical_average": round(float(monthly_avg), 2),
+                    "historical_max": round(float(monthly_avg), 2),
+                    "historical_min": round(float(monthly_avg), 2),
+                    "average_previous_monthly": round(float(monthly_avg), 2),
+                    "note": "Forecast based on single month of data. Add more months for better predictions."
+                }
+            }
 
         # Convert days to months
         months_to_forecast = max(1, int(days / 30))
