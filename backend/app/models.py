@@ -14,13 +14,25 @@ class User(Base):
 
 
 class FinancialData(Base):
-    __tablename__ = "financial_data"
+    __tablename__ = "finance_data"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(UUID(as_uuid=True), index=True, nullable=True)  # References auth.users(id)
     date = Column(DateTime, nullable=False, index=True)
     amount = Column(Numeric(15, 2), nullable=False)  # Decimal with 2 decimal places
-    transaction_type = Column(String, nullable=False, default='expense', index=True)  # 'income' or 'expense'
+    category = Column(String, nullable=True, index=True)  # Expense category (e.g., "Office Supplies", "Travel")
+    use_chip = Column(String, nullable=True)  # Transaction method: "Swipe Transaction" or "Online Transaction"
+    transaction_type = Column(String, nullable=False, default='expense', index=True)  # Always 'expense' for now
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Category(Base):
+    __tablename__ = "categories"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String, nullable=False, unique=True, index=True)  # Category name (e.g., "Office Supplies")
+    mcc_code = Column(String, nullable=True)  # Merchant Category Code (e.g., "5970")
+    description = Column(String, nullable=True)  # Optional description
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

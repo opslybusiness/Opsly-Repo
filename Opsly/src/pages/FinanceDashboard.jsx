@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import DashboardLayout from '../components/DashboardLayout'
 import { Link } from 'react-router-dom'
 import { HiPlus, HiDocumentText, HiChartBar, HiExclamation, HiX } from 'react-icons/hi'
-import { getFinancialData, addFinancialData, uploadFinancialDataCSV } from '../services/financeService'
+import { getFinancialData, addFinancialData, uploadFinancialDataCSV, getCategories } from '../services/financeService'
 
 function FinanceDashboard() {
   const [transactions, setTransactions] = useState([])
@@ -10,31 +10,43 @@ function FinanceDashboard() {
   const [error, setError] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
-  const [newTransaction, setNewTransaction] = useState({ date: '', amount: '', transaction_type: 'expense' })
+  const [newTransaction, setNewTransaction] = useState({ date: '', amount: '', category: '', use_chip: '' })
   const [uploadFile, setUploadFile] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [selectedMonth, setSelectedMonth] = useState(null)
+  const [selectedYear, setSelectedYear] = useState(null)
+  const [categories, setCategories] = useState([])
 
   // Calculate summary statistics
   const totalTransactions = transactions.length
-  const totalIncome = transactions
-    .filter(t => t.transaction_type === 'income')
-    .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
-  const totalExpense = transactions
-    .filter(t => t.transaction_type === 'expense')
-    .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
-  const netCashFlow = totalIncome - totalExpense
-  const avgTransaction = totalTransactions > 0 ? (totalIncome + totalExpense) / totalTransactions : 0
+  const totalExpense = transactions.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
+  const avgTransaction = totalTransactions > 0 ? totalExpense / totalTransactions : 0
 
-  // Fetch financial data on component mount
+  // Fetch financial data on component mount and when filters change
   useEffect(() => {
     fetchFinancialData()
-  }, [])
+    fetchCategories()
+  }, [selectedMonth, selectedYear])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await getCategories()
+      setCategories(response.categories || [])
+    } catch (err) {
+      console.error('Error fetching categories:', err)
+    }
+  }
 
   const fetchFinancialData = async () => {
     try {
       setLoading(true)
       setError('')
-      const response = await getFinancialData({ limit: 100 })
+      const params = { limit: 100 }
+      if (selectedMonth && selectedYear) {
+        params.month = selectedMonth
+        params.year = selectedYear
+      }
+      const response = await getFinancialData(params)
       setTransactions(response.data || [])
     } catch (err) {
       console.error('Error fetching financial data:', err)
@@ -47,7 +59,7 @@ function FinanceDashboard() {
   const handleAddTransaction = async (e) => {
     e.preventDefault()
     if (!newTransaction.date || !newTransaction.amount) {
-      setError('Please fill in all fields')
+      setError('Please fill in date and amount')
       return
     }
 
@@ -56,10 +68,11 @@ function FinanceDashboard() {
       await addFinancialData({
         date: newTransaction.date,
         amount: parseFloat(newTransaction.amount),
-        transaction_type: newTransaction.transaction_type,
+        category: newTransaction.category || null,
+        use_chip: newTransaction.use_chip || null,
       })
       setShowAddModal(false)
-      setNewTransaction({ date: '', amount: '', transaction_type: 'expense' })
+      setNewTransaction({ date: '', amount: '', category: '', use_chip: '' })
       // Refresh data
       await fetchFinancialData()
     } catch (err) {
@@ -108,8 +121,8 @@ function FinanceDashboard() {
   return (
     <DashboardLayout userName="Amanda">
       <div>
-        <h1 className="text-4xl font-bold text-white mb-2">Finance Analytics</h1>
-        <p className="text-gray-400 mb-8">Monitor and analyze financial transactions</p>
+        <h1 className="text-4xl font-bold text-white mb-2">Expense Analytics</h1>
+        <p className="text-gray-400 mb-8">Monitor and analyze expense transactions</p>
 
         {/* Error Message */}
         {error && (
@@ -145,35 +158,77 @@ function FinanceDashboard() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-opsly-card rounded-lg p-6">
             <p className="text-gray-400 mb-2">Total Transactions</p>
             <p className="text-4xl font-bold text-white">{loading ? '...' : totalTransactions}</p>
           </div>
           <div className="bg-opsly-card rounded-lg p-6">
-            <p className="text-gray-400 mb-2">Total Income</p>
-            <p className="text-4xl font-bold text-green-500">
-              {loading ? '...' : formatCurrency(totalIncome)}
-            </p>
-          </div>
-          <div className="bg-opsly-card rounded-lg p-6">
-            <p className="text-gray-400 mb-2">Total Expense</p>
+            <p className="text-gray-400 mb-2">Total Expenses</p>
             <p className="text-4xl font-bold text-red-500">
               {loading ? '...' : formatCurrency(totalExpense)}
             </p>
           </div>
           <div className="bg-opsly-card rounded-lg p-6">
-            <p className="text-gray-400 mb-2">Net Cash Flow</p>
-            <p className={`text-4xl font-bold ${netCashFlow >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {loading ? '...' : formatCurrency(netCashFlow)}
+            <p className="text-gray-400 mb-2">Average Expense</p>
+            <p className="text-4xl font-bold text-white">
+              {loading ? '...' : formatCurrency(avgTransaction)}
             </p>
           </div>
         </div>
 
         {/* Transaction History */}
         <div className="bg-opsly-card rounded-lg p-6">
-          <h2 className="text-2xl font-semibold text-white mb-2">Transaction History</h2>
-          <p className="text-gray-400 mb-6">Recent financial transactions</p>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-semibold text-white mb-2">Expense History</h2>
+              <p className="text-gray-400">Recent expense transactions</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <select
+                value={selectedYear || ''}
+                onChange={(e) => {
+                  const year = e.target.value ? parseInt(e.target.value) : null
+                  setSelectedYear(year)
+                  if (!year) setSelectedMonth(null)
+                }}
+                className="px-4 py-2 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
+              >
+                <option value="">All Years</option>
+                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+              <select
+                value={selectedMonth || ''}
+                onChange={(e) => {
+                  const month = e.target.value ? parseInt(e.target.value) : null
+                  setSelectedMonth(month)
+                }}
+                disabled={!selectedYear}
+                className="px-4 py-2 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">All Months</option>
+                {[
+                  'January', 'February', 'March', 'April', 'May', 'June',
+                  'July', 'August', 'September', 'October', 'November', 'December'
+                ].map((month, index) => (
+                  <option key={index + 1} value={index + 1}>{month}</option>
+                ))}
+              </select>
+              {(selectedMonth || selectedYear) && (
+                <button
+                  onClick={() => {
+                    setSelectedMonth(null)
+                    setSelectedYear(null)
+                  }}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-opacity-90 transition"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          </div>
 
           {loading ? (
             <div className="text-center py-8 text-gray-400">Loading transactions...</div>
@@ -187,8 +242,9 @@ function FinanceDashboard() {
               <thead>
                 <tr className="border-b border-gray-700">
                   <th className="text-left py-3 px-4 text-gray-400 font-semibold">Date</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-semibold">Type</th>
                   <th className="text-left py-3 px-4 text-gray-400 font-semibold">Amount</th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-semibold">Category</th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-semibold">Payment Method</th>
                   <th className="text-left py-3 px-4 text-gray-400 font-semibold">Created At</th>
                 </tr>
               </thead>
@@ -196,22 +252,14 @@ function FinanceDashboard() {
                 {transactions.map((transaction, idx) => (
                   <tr key={transaction.id || idx} className="border-b border-gray-800 hover:bg-opsly-dark transition">
                     <td className="py-4 px-4 text-gray-300">{formatDate(transaction.date)}</td>
-                    <td className="py-4 px-4">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                        transaction.transaction_type === 'income' 
-                          ? 'bg-green-500/20 text-green-400' 
-                          : 'bg-red-500/20 text-red-400'
-                      }`}>
-                        {transaction.transaction_type === 'income' ? 'Income' : 'Expense'}
-                      </span>
-                    </td>
-                    <td className={`py-4 px-4 font-semibold ${
-                      transaction.transaction_type === 'income' 
-                        ? 'text-green-500' 
-                        : 'text-red-500'
-                    }`}>
-                      {transaction.transaction_type === 'income' ? '+' : '-'}
+                    <td className="py-4 px-4 font-semibold text-red-500">
                       {formatCurrency(parseFloat(transaction.amount || 0))}
+                    </td>
+                    <td className="py-4 px-4 text-gray-300">
+                      {transaction.category || '-'}
+                    </td>
+                    <td className="py-4 px-4 text-gray-300">
+                      {transaction.use_chip || '-'}
                     </td>
                     <td className="py-4 px-4 text-gray-300">
                       {transaction.created_at ? formatDate(transaction.created_at) : '-'}
@@ -230,11 +278,11 @@ function FinanceDashboard() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-opsly-card rounded-lg p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-2xl font-bold text-white">Add Transaction</h3>
+              <h3 className="text-2xl font-bold text-white">Add Expense</h3>
               <button
                 onClick={() => {
                   setShowAddModal(false)
-                  setNewTransaction({ date: '', amount: '', transaction_type: 'expense' })
+                  setNewTransaction({ date: '', amount: '', category: '', use_chip: '' })
                   setError('')
                 }}
                 className="text-gray-400 hover:text-white"
@@ -244,7 +292,7 @@ function FinanceDashboard() {
             </div>
             <form onSubmit={handleAddTransaction}>
               <div className="mb-4">
-                <label className="block text-gray-400 mb-2">Date</label>
+                <label className="block text-gray-400 mb-2">Date *</label>
                 <input
                   type="date"
                   value={newTransaction.date}
@@ -254,34 +302,7 @@ function FinanceDashboard() {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-400 mb-2">Transaction Type</label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewTransaction({ ...newTransaction, transaction_type: 'income' })}
-                    className={`flex-1 px-4 py-2 rounded-lg transition ${
-                      newTransaction.transaction_type === 'income'
-                        ? 'bg-green-500 text-white'
-                        : 'bg-opsly-dark text-gray-400 hover:bg-opacity-50'
-                    }`}
-                  >
-                    Income
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewTransaction({ ...newTransaction, transaction_type: 'expense' })}
-                    className={`flex-1 px-4 py-2 rounded-lg transition ${
-                      newTransaction.transaction_type === 'expense'
-                        ? 'bg-red-500 text-white'
-                        : 'bg-opsly-dark text-gray-400 hover:bg-opacity-50'
-                    }`}
-                  >
-                    Expense
-                  </button>
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-400 mb-2">Amount</label>
+                <label className="block text-gray-400 mb-2">Amount *</label>
                 <input
                   type="number"
                   step="0.01"
@@ -292,18 +313,45 @@ function FinanceDashboard() {
                   required
                 />
               </div>
+              <div className="mb-4">
+                <label className="block text-gray-400 mb-2">Category</label>
+                <select
+                  value={newTransaction.category}
+                  onChange={(e) => setNewTransaction({ ...newTransaction, category: e.target.value })}
+                  className="w-full px-4 py-2 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
+                >
+                  <option value="">Select a category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.name}>
+                      {cat.name} {cat.mcc_code ? `(MCC: ${cat.mcc_code})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-400 mb-2">Payment Method</label>
+                <select
+                  value={newTransaction.use_chip}
+                  onChange={(e) => setNewTransaction({ ...newTransaction, use_chip: e.target.value })}
+                  className="w-full px-4 py-2 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
+                >
+                  <option value="">Select payment method</option>
+                  <option value="Swipe Transaction">Swipe Transaction</option>
+                  <option value="Online Transaction">Online Transaction</option>
+                </select>
+              </div>
               <div className="flex gap-4">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-opacity-90"
+                  className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-opacity-90"
                 >
-                  Add Transaction
+                  Add Expense
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     setShowAddModal(false)
-                    setNewTransaction({ date: '', amount: '', transaction_type: 'expense' })
+                    setNewTransaction({ date: '', amount: '', category: '', use_chip: '' })
                     setError('')
                   }}
                   className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-opacity-90"
@@ -345,7 +393,8 @@ function FinanceDashboard() {
                 />
                 <p className="text-gray-500 text-sm mt-2">
                   CSV must have 'date' and 'amount' columns.<br />
-                  Optional: 'transaction_type' column (income/expense, defaults to expense)
+                  Optional columns: 'category', 'use_chip' (Swipe Transaction or Online Transaction).<br />
+                  All entries will be treated as expenses.
                 </p>
               </div>
               <div className="flex gap-4">

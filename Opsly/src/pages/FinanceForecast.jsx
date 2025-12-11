@@ -31,7 +31,7 @@ function FinanceForecast() {
       setForecastData(forecastResponse)
 
       // Prepare chart data
-      // Group historical data by month and calculate net cash flow (income - expense)
+      // Group historical data by month and sum expenses
       const monthlyData = {}
       historicalData.forEach((item) => {
         const date = new Date(item.date)
@@ -39,9 +39,9 @@ function FinanceForecast() {
         if (!monthlyData[monthKey]) {
           monthlyData[monthKey] = 0
         }
-        // Income is positive, expense is negative
+        // Sum all expenses
         const amount = parseFloat(item.amount || 0)
-        monthlyData[monthKey] += item.transaction_type === 'income' ? amount : -amount
+        monthlyData[monthKey] += amount
       })
 
       // Format historical data for chart
@@ -102,7 +102,7 @@ function FinanceForecast() {
       <div>
         <Link to="/finance" className="text-opsly-purple mb-4 inline-block">← Back</Link>
         <h1 className="text-4xl font-bold text-white mb-2">Monthly Forecast</h1>
-        <p className="text-gray-400 mb-8">AI-powered net cash flow predictions (Income - Expense)</p>
+        <p className="text-gray-400 mb-8">AI-powered expense predictions</p>
 
         {/* Error Message */}
         {error && (
@@ -112,21 +112,24 @@ function FinanceForecast() {
         )}
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-opsly-card rounded-lg p-6">
-            <p className="text-gray-400 mb-2">Next Month Net Cash Flow</p>
-            <p className={`text-4xl font-bold mb-2 ${
-              nextMonthPrediction && nextMonthPrediction.forecasted_amount >= 0 
-                ? 'text-green-500' 
-                : 'text-red-500'
-            }`}>
+            <p className="text-gray-400 mb-2">Next Month Expenses</p>
+            <p className="text-4xl font-bold mb-2 text-red-500">
               {loading ? '...' : nextMonthPrediction ? formatCurrency(nextMonthPrediction.forecasted_amount) : '$0'}
             </p>
             {nextMonthPrediction && (
-              <p className={`text-sm ${calculateGrowth() >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {calculateGrowth() >= 0 ? '+' : ''}{calculateGrowth().toFixed(1)}% from last month
+              <p className={`text-sm ${calculateGrowth() <= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {calculateGrowth() <= 0 ? '' : '+'}{calculateGrowth().toFixed(1)}% from last month
               </p>
             )}
+          </div>
+          <div className="bg-opsly-card rounded-lg p-6">
+            <p className="text-gray-400 mb-2">Avg Previous Monthly</p>
+            <p className="text-4xl font-bold text-white mb-2">
+              {loading ? '...' : forecastData?.summary?.average_previous_monthly ? formatCurrency(forecastData.summary.average_previous_monthly) : '$0'}
+            </p>
+            <p className="text-gray-400 text-sm">Based on historical data</p>
           </div>
           <div className="bg-opsly-card rounded-lg p-6">
             <p className="text-gray-400 mb-2">Forecast Period</p>
@@ -155,7 +158,7 @@ function FinanceForecast() {
         {/* Spending Trend & Forecast */}
         <div className="bg-opsly-card rounded-lg p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold text-white">Net Cash Flow Trend & Forecast</h2>
+            <h2 className="text-2xl font-semibold text-white">Expense Trend & Forecast</h2>
             <div className="flex items-center gap-4">
               <button
                 onClick={fetchForecast}
@@ -193,7 +196,7 @@ function FinanceForecast() {
             <div className="text-center py-8 text-gray-400">Loading forecast data...</div>
           ) : chartData.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
-              No data available. Add financial transactions (income and/or expense) to generate forecasts.
+              No data available. Add expense transactions to generate forecasts.
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={400}>
@@ -210,7 +213,7 @@ function FinanceForecast() {
                 <YAxis
                   stroke="#9CA3AF"
                   tick={{ fill: '#9CA3AF' }}
-                  label={{ value: 'Net Cash Flow ($)', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
+                  label={{ value: 'Expenses ($)', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1E1E2E', border: '1px solid #374151', color: '#fff' }}
@@ -248,7 +251,7 @@ function FinanceForecast() {
                   stroke="#9333EA"
                   strokeWidth={3}
                   dot={{ fill: '#9333EA', r: 5 }}
-                  name="Historical Net Cash Flow"
+                  name="Historical Expenses"
                 />
                 <Line
                   type="monotone"
@@ -257,7 +260,7 @@ function FinanceForecast() {
                   strokeWidth={3}
                   strokeDasharray="5 5"
                   dot={{ fill: '#F97316', r: 5 }}
-                  name="Forecasted Net Cash Flow"
+                  name="Forecasted Expenses"
                 />
               </LineChart>
             </ResponsiveContainer>
