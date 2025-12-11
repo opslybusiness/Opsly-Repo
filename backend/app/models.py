@@ -21,8 +21,11 @@ class FinancialData(Base):
     date = Column(DateTime, nullable=False, index=True)
     amount = Column(Numeric(15, 2), nullable=False)  # Decimal with 2 decimal places
     category = Column(String, nullable=True, index=True)  # Expense category (e.g., "Office Supplies", "Travel")
-    use_chip = Column(String, nullable=True)  # Transaction method: "Swipe Transaction" or "Online Transaction"
+    use_chip = Column(String, nullable=True)  # Transaction method: "Swipe Transaction", "Chip Transaction", or "Online Transaction"
     transaction_type = Column(String, nullable=False, default='expense', index=True)  # Always 'expense' for now
+    # Fraud detection fields
+    is_fraud = Column(Integer, nullable=True)  # 0 = legitimate, 1 = fraud, NULL = not checked
+    fraud_probability = Column(Numeric(5, 4), nullable=True)  # Probability score (0.0000 to 1.0000)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -48,4 +51,7 @@ class FraudDetection(Base):
     merchant_name = Column(String, nullable=True)
     merchant_state = Column(String, nullable=True)
     transaction_date = Column(DateTime, nullable=False, index=True)
+    # New fields for the updated fraud detection pipeline
+    payment_code = Column(Integer, nullable=True)  # Payment method code
+    mcc_simple = Column(Integer, nullable=True)  # Simplified MCC code
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
