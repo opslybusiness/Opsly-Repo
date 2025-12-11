@@ -15,6 +15,7 @@ import FinanceAnomaly from './pages/FinanceAnomaly'
 import RAGChatbot from './pages/RAGChatbot'
 import CustomerChatbot from './pages/CustomerChatbot'
 import SupportUs from './pages/SupportUs'
+import AboutUs from './pages/AboutUs'
 
 function App() {
   return (
@@ -100,6 +101,10 @@ function App() {
                 <SupportUs />
               </ProtectedRoute>
             } 
+          />
+          <Route 
+            path="/about-us" 
+            element={<AboutUs />} 
           />
           </Routes>
         </MarketingProvider>

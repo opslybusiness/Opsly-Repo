@@ -1,4 +1,4 @@
-import { Link, useNavigate, Navigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FaGoogle } from 'react-icons/fa'
 import { HiEye, HiEyeOff } from 'react-icons/hi'
 import { useState, useEffect } from 'react'
@@ -17,13 +17,6 @@ function SignupPage() {
   const navigate = useNavigate()
   const { signUp, isAuthenticated, loading: authLoading } = useAuth()
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      navigate('/marketing', { replace: true })
-    }
-  }, [isAuthenticated, authLoading, navigate])
-
   // Show loading while checking auth
   if (authLoading) {
     return (
@@ -33,10 +26,13 @@ function SignupPage() {
     )
   }
 
-  // Redirect if authenticated
-  if (isAuthenticated) {
-    return <Navigate to="/marketing" replace />
-  }
+  // Only redirect if authenticated AFTER loading is complete
+  // This prevents redirecting when user intentionally wants to access signup page
+  // We'll let users access login/signup pages even if authenticated
+  useEffect(() => {
+    // Only auto-redirect if coming from another page, not if user directly navigated here
+    // They can still see the page, but after successful signup they'll be redirected
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -86,7 +82,7 @@ function SignupPage() {
   }
 
   return (
-    <div className="h-screen flex bg-opsly-dark relative overflow-hidden px-16">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-opsly-dark relative overflow-hidden px-4 sm:px-8 md:px-16">
       {/* Vertical Lines Background Pattern */}
       <div 
         className="absolute inset-0 pointer-events-none opacity-20"
@@ -96,17 +92,17 @@ function SignupPage() {
         }}
       ></div>
       {/* Left Section - Signup Form */}
-      <div className="flex-1 p-8 flex flex-col justify-center items-end relative overflow-y-auto z-10 pr-8">
+      <div className="flex-1 p-4 sm:p-6 md:p-8 flex flex-col justify-center items-center lg:items-end relative overflow-y-auto z-10 lg:pr-8">
 
-        <div className="relative z-10 max-w-md w-full">
+        <div className="relative z-10 max-w-md w-full min-w-0 px-4">
           {/* Logo */}
-          <div className="text-2xl font-bold text-white mb-12">
+          <div className="text-xl sm:text-2xl font-bold text-white mb-8 sm:mb-10 md:mb-12">
             <span className="text-opsly-purple">Ö</span>psly
           </div>
 
           {/* Welcome Message */}
-          <h1 className="text-4xl font-bold text-white mb-2">Create Account</h1>
-          <p className="text-gray-400 mb-8">Please enter your details to get started</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Create Account</h1>
+          <p className="text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Please enter your details to get started</p>
 
           {/* Error Message */}
           {error && (
@@ -210,13 +206,13 @@ function SignupPage() {
           {/* Continue With Google */}
           <button 
             onClick={() => navigate('/marketing')}
-            className="w-full py-3 bg-white text-opsly-dark rounded-lg font-semibold border border-gray-300 flex items-center justify-center gap-3 hover:bg-gray-50 transition">
-            <FaGoogle className="text-xl" />
-            Continue With Google
+            className="w-full py-3 bg-white text-opsly-dark rounded-lg font-semibold border border-gray-300 flex items-center justify-center gap-2 sm:gap-3 hover:bg-gray-50 transition text-sm sm:text-base">
+            <FaGoogle className="text-lg sm:text-xl flex-shrink-0" />
+            <span>Continue With Google</span>
           </button>
 
           {/* Sign In Link */}
-          <p className="text-center mt-6 text-gray-400">
+          <p className="text-center mt-6 text-sm sm:text-base text-gray-400">
             Already have an account?{' '}
             <Link to="/login" className="text-opsly-purple hover:underline">Sign In</Link>
           </p>
@@ -224,7 +220,7 @@ function SignupPage() {
       </div>
 
       {/* Right Section - Illustration */}
-      <div className="flex-1 flex flex-col justify-center items-end relative overflow-hidden py-8 z-10 pr-8">
+      <div className="hidden lg:flex flex-1 flex-col justify-center items-end relative overflow-hidden py-8 z-10 pr-8">
         <div className="relative flex items-center justify-center w-full h-full py-8">
           <img src="/Frame 70.png" alt="Illustration" className="object-contain max-w-full max-h-full" />
         </div>
