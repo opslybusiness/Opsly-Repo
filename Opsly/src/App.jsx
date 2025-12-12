@@ -13,6 +13,7 @@ import TicketDetail from './pages/TicketDetail'
 import FinanceDashboard from './pages/FinanceDashboard'
 import FinanceForecast from './pages/FinanceForecast'
 import FinanceAnomaly from './pages/FinanceAnomaly'
+import FinanceReports from './pages/FinanceReports'
 import RAGChatbot from './pages/RAGChatbot'
 import CustomerChatbot from './pages/CustomerChatbot'
 import SupportUs from './pages/SupportUs'
@@ -81,6 +82,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <FinanceAnomaly />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/finance/reports" 
+            element={
+              <ProtectedRoute>
+                <FinanceReports />
               </ProtectedRoute>
             } 
           />

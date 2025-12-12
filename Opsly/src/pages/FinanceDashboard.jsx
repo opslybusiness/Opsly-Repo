@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import DashboardLayout from '../components/DashboardLayout'
 import { Link } from 'react-router-dom'
-import { HiPlus, HiDocumentText, HiChartBar, HiExclamation, HiX } from 'react-icons/hi'
+import { HiPlus, HiDocumentText, HiChartBar, HiExclamation, HiX, HiDocumentReport } from 'react-icons/hi'
 import { getFinancialData, addFinancialData, uploadFinancialDataCSV, getCategories } from '../services/financeService'
 
 function FinanceDashboard() {
@@ -164,6 +164,11 @@ function FinanceDashboard() {
             <span className="hidden md:inline">Anomaly Detector</span>
             <span className="hidden sm:inline md:hidden">Anomaly</span>
             <span className="sm:hidden">Anomaly</span>
+          </Link>
+          <Link to="/finance/reports" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-teal-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2">
+            <HiDocumentReport className="text-lg sm:text-xl flex-shrink-0" />
+            <span className="hidden sm:inline">Reports</span>
+            <span className="sm:hidden">Reports</span>
           </Link>
         </div>
 
