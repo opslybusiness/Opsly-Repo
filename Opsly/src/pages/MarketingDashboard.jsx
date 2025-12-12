@@ -1,5 +1,5 @@
 import DashboardLayout from '../components/DashboardLayout'
-import { FaFacebook, FaLinkedin, FaInstagram } from 'react-icons/fa'
+import { FaFacebook, FaInstagram } from 'react-icons/fa'
 import { HiCalendar } from 'react-icons/hi'
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
@@ -186,7 +186,7 @@ function MarketingDashboard() {
   // Show loading if auth is still loading
   if (authLoading) {
     return (
-      <DashboardLayout userName="User">
+      <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="text-white text-xl mb-4">Loading...</div>
@@ -197,7 +197,7 @@ function MarketingDashboard() {
   }
 
   return (
-    <DashboardLayout userName="Alexa">
+    <DashboardLayout>
       <div className="min-w-0 max-w-full">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2">Marketing</h1>
         <p className="text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Connect Your Accounts</p>
@@ -285,26 +285,40 @@ function MarketingDashboard() {
             <div>
               <label className="block text-sm sm:text-base text-white mb-2 sm:mb-3">Select Platforms</label>
               <div className="flex flex-wrap gap-3 sm:gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={postForm.postToFacebook}
-                    onChange={(e) => setPostForm({ ...postForm, postToFacebook: e.target.checked })}
-                    className="w-4 h-4 sm:w-5 sm:h-5 rounded flex-shrink-0"
-                  />
-                  <FaFacebook className="text-lg sm:text-xl text-blue-500 flex-shrink-0" />
-                  <span className="text-sm sm:text-base text-gray-300">Facebook</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={postForm.postToInstagram}
-                    onChange={(e) => setPostForm({ ...postForm, postToInstagram: e.target.checked })}
-                    className="w-4 h-4 sm:w-5 sm:h-5 rounded flex-shrink-0"
-                  />
-                  <FaInstagram className="text-lg sm:text-xl flex-shrink-0" style={{ background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }} />
-                  <span className="text-sm sm:text-base text-gray-300">Instagram</span>
-                </label>
+                <button
+                  type="button"
+                  onClick={() => setPostForm({ ...postForm, postToFacebook: !postForm.postToFacebook })}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
+                    postForm.postToFacebook 
+                      ? 'border-blue-500 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
+                      : 'border-gray-700 bg-opsly-dark hover:border-gray-500'
+                  }`}
+                >
+                  <FaFacebook className={`text-2xl flex-shrink-0 ${postForm.postToFacebook ? 'text-blue-500' : 'text-gray-500'}`} />
+                  <span className={`text-sm sm:text-base font-medium ${postForm.postToFacebook ? 'text-white' : 'text-gray-400'}`}>Facebook</span>
+                  {postForm.postToFacebook && (
+                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center ml-auto">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPostForm({ ...postForm, postToInstagram: !postForm.postToInstagram })}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
+                    postForm.postToInstagram 
+                      ? 'border-pink-500 bg-pink-500/20 shadow-lg shadow-pink-500/20' 
+                      : 'border-gray-700 bg-opsly-dark hover:border-gray-500'
+                  }`}
+                >
+                  <FaInstagram className={`text-2xl flex-shrink-0 ${postForm.postToInstagram ? 'text-pink-500' : 'text-gray-500'}`} />
+                  <span className={`text-sm sm:text-base font-medium ${postForm.postToInstagram ? 'text-white' : 'text-gray-400'}`}>Instagram</span>
+                  {postForm.postToInstagram && (
+                    <div className="w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center ml-auto">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                  )}
+                </button>
               </div>
             </div>
 
@@ -429,12 +443,10 @@ function MarketingDashboard() {
         <div>
           <h2 className="text-xl sm:text-2xl font-semibold text-white mb-4 sm:mb-6">Your Posts</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            {/* Post 1 */}
+            {/* Post 1 - Published */}
             <Link to="/marketing/post-analytics" className="bg-opsly-card rounded-lg overflow-hidden hover:opacity-90 transition cursor-pointer">
               <div className="relative">
-                <div className="w-full h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <div className="text-6xl">📊</div>
-                </div>
+                <img src="/Published.png" alt="Published Post" className="w-full h-48 object-cover" />
                 <span className="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded text-sm font-semibold">
                   Published
                 </span>
@@ -443,17 +455,14 @@ function MarketingDashboard() {
                 <div className="flex gap-2">
                   <FaFacebook className="text-blue-500" />
                   <FaInstagram className="text-pink-500" />
-                  {/* <FaLinkedin className="text-blue-600" /> */}
                 </div>
               </div>
             </Link>
 
-            {/* Post 2 */}
+            {/* Post 2 - Scheduled */}
             <Link to="/marketing/post-analytics" className="bg-opsly-card rounded-lg overflow-hidden hover:opacity-90 transition cursor-pointer">
               <div className="relative">
-                <div className="w-full h-48 bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                  <div className="text-6xl">👥</div>
-                </div>
+                <img src="/Scheduled.png" alt="Scheduled Post" className="w-full h-48 object-cover" />
                 <span className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded text-sm font-semibold">
                   Scheduled
                 </span>
@@ -462,7 +471,6 @@ function MarketingDashboard() {
                 <div className="flex gap-2">
                   <FaFacebook className="text-blue-500" />
                   <FaInstagram className="text-pink-500" />
-                  <FaLinkedin className="text-blue-600" />
                 </div>
               </div>
             </Link>

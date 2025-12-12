@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { HiPhone, HiChartBar, HiFolder, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX } from 'react-icons/hi'
-import { FaSearch, FaBell } from 'react-icons/fa'
+import { HiPhone, HiChartBar, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX } from 'react-icons/hi'
+import { FaSearch, FaBell, FaCoins } from 'react-icons/fa'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { getConnectionStatus } from '../services/marketingService'
@@ -48,7 +48,7 @@ function DashboardLayout({ children, userName }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-opsly-gray overflow-x-hidden w-full">
+    <div className="h-screen flex bg-opsly-gray overflow-hidden w-full">
       {/* Mobile Menu Overlay */}
       {showMobileMenu && (
         <>
@@ -93,7 +93,7 @@ function DashboardLayout({ children, userName }) {
               className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/finance') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
               onClick={() => setShowMobileMenu(false)}
             >
-              <HiFolder className="text-xl text-white" />
+              <FaCoins className="text-xl text-white" />
               <span className="text-white">Finance</span>
             </Link>
             <Link 
@@ -129,7 +129,7 @@ function DashboardLayout({ children, userName }) {
           <HiChartBar className="text-xl text-white" />
         </Link>
         <Link to="/finance" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/finance') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-          <HiFolder className="text-xl text-white" />
+          <FaCoins className="text-xl text-white" />
         </Link>
         <Link to="/chatbot" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/chatbot') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
           <HiChat className="text-xl text-white" />
@@ -142,7 +142,7 @@ function DashboardLayout({ children, userName }) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col bg-opsly-dark lg:ml-14 w-full min-w-0 overflow-x-hidden">
+      <div className="flex-1 flex flex-col bg-opsly-dark lg:ml-14 w-full min-w-0 overflow-hidden h-screen">
         {/* Header */}
         <header className="bg-opsly-dark px-3 sm:px-5 py-3 sm:py-4 flex items-center justify-between border-b border-gray-800 min-w-0 overflow-visible max-w-full relative z-20">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">

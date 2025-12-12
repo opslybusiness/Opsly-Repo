@@ -98,7 +98,7 @@ function FinanceForecast() {
   }
 
   return (
-    <DashboardLayout userName="Amanda">
+    <DashboardLayout>
       <div>
         <Link to="/finance" className="text-opsly-purple mb-4 inline-block">← Back</Link>
         <h1 className="text-4xl font-bold text-white mb-2">Monthly Forecast</h1>

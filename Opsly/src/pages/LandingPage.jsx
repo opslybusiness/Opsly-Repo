@@ -48,7 +48,7 @@ function LandingPage() {
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-center mb-4 font-inter leading-tight px-2">
             <div className="bg-gradient-to-r from-white to-opsly-purple bg-clip-text text-transparent">smart support</div>
-            <div className="bg-gradient-to-r from-opsly-purple to-white bg-clip-text text-transparent">strong decisions.</div>
+            <div className="bg-gradient-to-r from-opsly-purple to-white bg-clip-text text-transparent pb-1">strong decisions.</div>
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-8 sm:mb-10 md:mb-12 text-center px-4 max-w-2xl">
             Efficiently automate your business and boost productivity.
@@ -77,12 +77,12 @@ function LandingPage() {
           
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 relative z-10 pb-4">
           {/* Integrations Card */}
-          <div className="bg-gray-100 rounded-lg p-6 sm:p-8 shadow-lg" style={{ boxShadow: '0 4px 6px -1px rgba(94, 94, 94, 0.3), 0 2px 4px -1px rgba(94, 94, 94, 0.2)', border: '2px solid #5E5E5E' }}>
-            <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 sm:mb-6">Integrations</h3>
-            <div className="flex gap-3 sm:gap-4 justify-center sm:justify-start">
-              <img src="/Gmail.png" alt="Gmail" className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover flex-shrink-0" />
-              <img src="/Meet.png" alt="Meet" className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover flex-shrink-0" />
-              <img src="/Calender.png" alt="Calendar" className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover flex-shrink-0" />
+          <div className="bg-gray-100 rounded-lg p-6 sm:p-8 shadow-lg flex flex-col" style={{ boxShadow: '0 4px 6px -1px rgba(94, 94, 94, 0.3), 0 2px 4px -1px rgba(94, 94, 94, 0.2)', border: '2px solid #5E5E5E' }}>
+            <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 sm:mb-6 text-center">Integrations</h3>
+            <div className="flex gap-4 sm:gap-5 justify-center items-center flex-1">
+              <img src="/Gmail.png" alt="Gmail" className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover flex-shrink-0" />
+              <img src="/Meet.png" alt="Meet" className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover flex-shrink-0" />
+              <img src="/Calender.png" alt="Calendar" className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover flex-shrink-0" />
             </div>
           </div>
 

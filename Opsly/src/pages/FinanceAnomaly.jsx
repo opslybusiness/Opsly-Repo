@@ -87,7 +87,7 @@ function FinanceAnomaly() {
   }
 
   return (
-    <DashboardLayout userName="Amanda">
+    <DashboardLayout>
       <div className="min-w-0 max-w-full">
         <Link to="/finance" className="text-sm sm:text-base text-opsly-purple mb-3 sm:mb-4 inline-block hover:underline">← Back</Link>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-2">

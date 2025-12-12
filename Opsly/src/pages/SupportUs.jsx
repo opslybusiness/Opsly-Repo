@@ -3,7 +3,7 @@ import { HiHeart, HiQrcode } from 'react-icons/hi'
 
 function SupportUs() {
   return (
-    <DashboardLayout userName="Friend">
+    <DashboardLayout>
       <div className="max-w-4xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-8">

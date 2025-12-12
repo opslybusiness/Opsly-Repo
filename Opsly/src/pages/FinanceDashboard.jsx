@@ -124,7 +124,7 @@ function FinanceDashboard() {
   }
 
   return (
-    <DashboardLayout userName="Amanda">
+    <DashboardLayout>
       <div>
         <h1 className="text-4xl font-bold text-white mb-2">Expense Analytics</h1>
         <p className="text-gray-400 mb-8">Monitor and analyze expense transactions</p>
@@ -156,12 +156,12 @@ function FinanceDashboard() {
           </button>
           <Link to="/finance/forecast" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2">
             <HiChartBar className="text-lg sm:text-xl flex-shrink-0" />
-            <span className="hidden sm:inline">Modify Forecast</span>
+            <span className="hidden sm:inline">Forecasting</span>
             <span className="sm:hidden">Forecast</span>
           </Link>
           <Link to="/finance/anomaly" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-orange-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2">
             <HiExclamation className="text-lg sm:text-xl flex-shrink-0" />
-            <span className="hidden md:inline">Anomaly Detection</span>
+            <span className="hidden md:inline">Anomaly Detector</span>
             <span className="hidden sm:inline md:hidden">Anomaly</span>
             <span className="sm:hidden">Anomaly</span>
           </Link>
@@ -255,7 +255,7 @@ function FinanceDashboard() {
                   <th className="text-left py-3 px-4 text-gray-400 font-semibold">Amount</th>
                   <th className="text-left py-3 px-4 text-gray-400 font-semibold">Category</th>
                   <th className="text-left py-3 px-4 text-gray-400 font-semibold">Payment Method</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-semibold">Created At</th>
+                  {/* Removed Created At column */}
                 </tr>
               </thead>
               <tbody>
@@ -271,9 +271,7 @@ function FinanceDashboard() {
                     <td className="py-4 px-4 text-gray-300">
                       {transaction.use_chip || '-'}
                     </td>
-                    <td className="py-4 px-4 text-gray-300">
-                      {transaction.created_at ? formatDate(transaction.created_at) : '-'}
-                    </td>
+                    {/* Removed Created At cell */}
                   </tr>
                 ))}
               </tbody>

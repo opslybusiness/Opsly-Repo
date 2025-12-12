@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 
 function MarketingPostAnalytics() {
   return (
-    <DashboardLayout userName="Alexa">
+    <DashboardLayout>
       <div>
         <Link to="/marketing" className="text-opsly-purple mb-4 inline-block">← Back</Link>
         <h1 className="text-4xl font-bold text-white mb-8">Post Analytics</h1>
@@ -14,8 +14,13 @@ function MarketingPostAnalytics() {
         <div className="bg-opsly-card rounded-lg p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-6">
             <div className="w-full md:w-1/3">
-              <div className="w-full h-64 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
-                <div className="text-8xl">💻</div>
+              <div className="w-full h-64 rounded-lg flex items-center justify-center bg-gradient-to-br from-green-400 to-blue-500">
+                <img
+                  src="/Product.jpg"
+                  alt="Product"
+                  className="object-cover w-full h-full rounded-lg shadow-lg"
+                  style={{ maxHeight: '16rem' }}
+                />
               </div>
             </div>
             <div className="flex-1">
