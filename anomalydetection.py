@@ -10,7 +10,7 @@ Original file is located at
 # === KAGGLE DATASET IMPORT WITH MEMORY TRACKING ===
 
 # Install required package
-!pip install kagglehub[pandas-datasets] -q
+#!pip install kagglehub[pandas-datasets] -q
 
 import kagglehub
 import pandas as pd
