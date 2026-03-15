@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import DashboardLayout from '../components/DashboardLayout'
 import { Link } from 'react-router-dom'
-import { HiPlus, HiDocumentText, HiChartBar, HiExclamation, HiX } from 'react-icons/hi'
+import { HiPlus, HiDocumentText, HiChartBar, HiExclamation, HiX, HiDocumentReport } from 'react-icons/hi'
 import { getFinancialData, addFinancialData, uploadFinancialDataCSV, getCategories } from '../services/financeService'
 
 function FinanceDashboard() {
@@ -58,8 +58,8 @@ function FinanceDashboard() {
 
   const handleAddTransaction = async (e) => {
     e.preventDefault()
-    if (!newTransaction.date || !newTransaction.amount) {
-      setError('Please fill in date and amount')
+    if (!newTransaction.date || !newTransaction.amount || !newTransaction.category || !newTransaction.use_chip) {
+      setError('Please fill in all required fields (date, amount, category, payment method)')
       return
     }
 
@@ -68,8 +68,8 @@ function FinanceDashboard() {
       await addFinancialData({
         date: newTransaction.date,
         amount: parseFloat(newTransaction.amount),
-        category: newTransaction.category || null,
-        use_chip: newTransaction.use_chip || null,
+        category: newTransaction.category,
+        use_chip: newTransaction.use_chip,
       })
       setShowAddModal(false)
       setNewTransaction({ date: '', amount: '', category: '', use_chip: '' })
@@ -105,10 +105,15 @@ function FinanceDashboard() {
     }
   }
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString, showTime = false) => {
     if (!dateString) return ''
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    const options = { year: 'numeric', month: '2-digit', day: '2-digit' }
+    if (showTime) {
+      options.hour = '2-digit'
+      options.minute = '2-digit'
+    }
+    return date.toLocaleDateString('en-US', options)
   }
 
   const formatCurrency = (amount) => {
@@ -119,7 +124,7 @@ function FinanceDashboard() {
   }
 
   return (
-    <DashboardLayout userName="Amanda">
+    <DashboardLayout>
       <div>
         <h1 className="text-4xl font-bold text-white mb-2">Expense Analytics</h1>
         <p className="text-gray-400 mb-8">Monitor and analyze expense transactions</p>
@@ -151,14 +156,19 @@ function FinanceDashboard() {
           </button>
           <Link to="/finance/forecast" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2">
             <HiChartBar className="text-lg sm:text-xl flex-shrink-0" />
-            <span className="hidden sm:inline">Modify Forecast</span>
+            <span className="hidden sm:inline">Forecasting</span>
             <span className="sm:hidden">Forecast</span>
           </Link>
           <Link to="/finance/anomaly" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-orange-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2">
             <HiExclamation className="text-lg sm:text-xl flex-shrink-0" />
-            <span className="hidden md:inline">Anomaly Detection</span>
+            <span className="hidden md:inline">Anomaly Detector</span>
             <span className="hidden sm:inline md:hidden">Anomaly</span>
             <span className="sm:hidden">Anomaly</span>
+          </Link>
+          <Link to="/finance/reports" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-teal-500 text-white rounded-lg hover:bg-opacity-90 transition flex items-center gap-1.5 sm:gap-2">
+            <HiDocumentReport className="text-lg sm:text-xl flex-shrink-0" />
+            <span className="hidden sm:inline">Reports</span>
+            <span className="sm:hidden">Reports</span>
           </Link>
         </div>
 
@@ -250,13 +260,13 @@ function FinanceDashboard() {
                   <th className="text-left py-3 px-4 text-gray-400 font-semibold">Amount</th>
                   <th className="text-left py-3 px-4 text-gray-400 font-semibold">Category</th>
                   <th className="text-left py-3 px-4 text-gray-400 font-semibold">Payment Method</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-semibold">Created At</th>
+                  {/* Removed Created At column */}
                 </tr>
               </thead>
               <tbody>
                 {transactions.map((transaction, idx) => (
                   <tr key={transaction.id || idx} className="border-b border-gray-800 hover:bg-opsly-dark transition">
-                    <td className="py-4 px-4 text-gray-300">{formatDate(transaction.date)}</td>
+                    <td className="py-4 px-4 text-gray-300">{formatDate(transaction.date, true)}</td>
                     <td className="py-4 px-4 font-semibold text-red-500">
                       {formatCurrency(parseFloat(transaction.amount || 0))}
                     </td>
@@ -266,9 +276,7 @@ function FinanceDashboard() {
                     <td className="py-4 px-4 text-gray-300">
                       {transaction.use_chip || '-'}
                     </td>
-                    <td className="py-4 px-4 text-gray-300">
-                      {transaction.created_at ? formatDate(transaction.created_at) : '-'}
-                    </td>
+                    {/* Removed Created At cell */}
                   </tr>
                 ))}
               </tbody>
@@ -296,21 +304,30 @@ function FinanceDashboard() {
               </button>
             </div>
             <form onSubmit={handleAddTransaction}>
+              {/* Info about fraud detection */}
+              <div className="mb-4 p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg">
+                <p className="text-xs text-blue-200">
+                  <strong>Note:</strong> Transactions are automatically analyzed for fraud detection. 
+                  Please fill in all fields for accurate detection.
+                </p>
+              </div>
               <div className="mb-4">
-                <label className="block text-gray-400 mb-2">Date *</label>
+                <label className="block text-gray-400 mb-2">Date & Time *</label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   value={newTransaction.date}
                   onChange={(e) => setNewTransaction({ ...newTransaction, date: e.target.value })}
                   className="w-full px-4 py-2 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
                   required
                 />
+                <p className="text-gray-500 text-xs mt-1">Include time for accurate fraud detection</p>
               </div>
               <div className="mb-4">
                 <label className="block text-gray-400 mb-2">Amount *</label>
                 <input
                   type="number"
                   step="0.01"
+                  min="0.01"
                   value={newTransaction.amount}
                   onChange={(e) => setNewTransaction({ ...newTransaction, amount: e.target.value })}
                   className="w-full px-4 py-2 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
@@ -319,11 +336,12 @@ function FinanceDashboard() {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-400 mb-2">Category</label>
+                <label className="block text-gray-400 mb-2">Category *</label>
                 <select
                   value={newTransaction.category}
                   onChange={(e) => setNewTransaction({ ...newTransaction, category: e.target.value })}
                   className="w-full px-4 py-2 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
+                  required
                 >
                   <option value="">Select a category</option>
                   {categories.map((cat) => (
@@ -332,18 +350,22 @@ function FinanceDashboard() {
                     </option>
                   ))}
                 </select>
+                <p className="text-gray-500 text-xs mt-1">Category determines MCC code for fraud detection</p>
               </div>
               <div className="mb-4">
-                <label className="block text-gray-400 mb-2">Payment Method</label>
+                <label className="block text-gray-400 mb-2">Payment Method *</label>
                 <select
                   value={newTransaction.use_chip}
                   onChange={(e) => setNewTransaction({ ...newTransaction, use_chip: e.target.value })}
                   className="w-full px-4 py-2 bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
+                  required
                 >
                   <option value="">Select payment method</option>
                   <option value="Swipe Transaction">Swipe Transaction</option>
+                  <option value="Chip Transaction">Chip Transaction</option>
                   <option value="Online Transaction">Online Transaction</option>
                 </select>
+                <p className="text-gray-500 text-xs mt-1">Payment method is used for fraud analysis</p>
               </div>
               <div className="flex gap-4">
                 <button
@@ -397,9 +419,11 @@ function FinanceDashboard() {
                   required
                 />
                 <p className="text-gray-500 text-sm mt-2">
-                  CSV must have 'date' and 'amount' columns.<br />
-                  Optional columns: 'category', 'use_chip' (Swipe Transaction or Online Transaction).<br />
-                  All entries will be treated as expenses.
+                  <strong>Required columns:</strong> 'date', 'amount'<br />
+                  <strong>Recommended columns for fraud detection:</strong><br />
+                  - 'category': Expense category (maps to MCC code)<br />
+                  - 'use_chip': Payment method (Swipe Transaction, Chip Transaction, or Online Transaction)<br />
+                  <strong>Note:</strong> Include time in date (e.g., 2024-01-15 14:30:00) for accurate fraud detection.
                 </p>
               </div>
               <div className="flex gap-4">
@@ -431,4 +455,5 @@ function FinanceDashboard() {
 }
 
 export default FinanceDashboard
+
 

@@ -1,56 +1,16 @@
 import { apiClient } from './api'
 
 /**
- * Fraud Detection Service - Handles all fraud detection-related API calls
+ * Fraud Detection Service - Handles fraud detection history API calls
+ * 
+ * Note: Fraud detection is now performed automatically when transactions are added.
+ * This service is primarily used to retrieve fraud detection history.
  */
-
-/**
- * Check if a single transaction is fraudulent
- * @param {Object} data - Transaction data
- * @param {number} data.amount - Transaction amount
- * @param {string} data.transaction_date - Date in YYYY-MM-DD or YYYY-MM-DD HH:MM:SS format
- * @param {string} data.merchant_name - Optional merchant name
- * @param {string} data.merchant_state - Optional merchant state
- * @param {string} data.transaction_id - Optional transaction ID
- * @returns {Promise<Object>} Fraud detection result
- */
-export const checkTransactionFraud = async (data) => {
-  const formData = new URLSearchParams()
-  formData.append('amount', data.amount.toString())
-  formData.append('transaction_date', data.transaction_date)
-  if (data.merchant_name) formData.append('merchant_name', data.merchant_name)
-  if (data.merchant_state) formData.append('merchant_state', data.merchant_state)
-  if (data.transaction_id) formData.append('transaction_id', data.transaction_id)
-
-  return apiClient('/fraud/check', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: formData.toString(),
-  })
-}
-
-/**
- * Check multiple transactions from a CSV file for fraud
- * @param {File} file - CSV file to upload
- * @returns {Promise<Object>} Batch fraud detection results
- */
-export const checkTransactionsBatch = async (file) => {
-  const formData = new FormData()
-  formData.append('file', file)
-
-  return apiClient('/fraud/check/batch', {
-    method: 'POST',
-    headers: {
-      // Don't set Content-Type, let browser set it with boundary for FormData
-    },
-    body: formData,
-  })
-}
 
 /**
  * Get fraud detection history for the authenticated user
+ * Returns transactions that have been analyzed for fraud from the FinancialData table.
+ * 
  * @param {Object} params - Query parameters
  * @param {string} params.start_date - Optional start date filter (YYYY-MM-DD)
  * @param {string} params.end_date - Optional end date filter (YYYY-MM-DD)
@@ -74,3 +34,24 @@ export const getFraudDetectionHistory = async (params = {}) => {
   return apiClient(endpoint, { method: 'GET' })
 }
 
+/**
+ * Payment code mapping (for display purposes)
+ * Maps use_chip values to payment codes:
+ * - 'Swipe Transaction': 1
+ * - 'Chip Transaction': 2
+ * - 'Online Transaction': 3
+ */
+export const PAYMENT_CODE_MAP = {
+  'Swipe Transaction': 1,
+  'Chip Transaction': 2,
+  'Online Transaction': 3
+}
+
+/**
+ * Payment code labels for display
+ */
+export const PAYMENT_CODE_LABELS = {
+  1: 'Swipe',
+  2: 'Chip',
+  3: 'Online'
+}

@@ -188,7 +188,7 @@ function RAGChatbot() {
   }
 
   return (
-    <DashboardLayout userName="User">
+    <DashboardLayout>
       <div className="flex flex-col h-full min-w-0 max-w-full">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6 min-w-0">
           <div className="min-w-0">

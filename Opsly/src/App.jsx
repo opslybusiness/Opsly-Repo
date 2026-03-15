@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { MarketingProvider } from './contexts/MarketingContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import PageTransition from './components/PageTransition'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
@@ -12,6 +13,7 @@ import TicketDetail from './pages/TicketDetail'
 import FinanceDashboard from './pages/FinanceDashboard'
 import FinanceForecast from './pages/FinanceForecast'
 import FinanceAnomaly from './pages/FinanceAnomaly'
+import FinanceReports from './pages/FinanceReports'
 import RAGChatbot from './pages/RAGChatbot'
 import CustomerChatbot from './pages/CustomerChatbot'
 import SupportUs from './pages/SupportUs'
@@ -22,6 +24,7 @@ function App() {
     <Router>
       <AuthProvider>
         <MarketingProvider>
+          <PageTransition>
           <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -83,6 +86,14 @@ function App() {
             } 
           />
           <Route 
+            path="/finance/reports" 
+            element={
+              <ProtectedRoute>
+                <FinanceReports />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/chatbot" 
             element={
               <ProtectedRoute>
@@ -107,6 +118,7 @@ function App() {
             element={<AboutUs />} 
           />
           </Routes>
+          </PageTransition>
         </MarketingProvider>
       </AuthProvider>
     </Router>

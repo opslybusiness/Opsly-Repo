@@ -34,7 +34,7 @@ function TicketDetail() {
   const { id } = useParams()
 
   return (
-    <DashboardLayout userName="Martin">
+    <DashboardLayout>
       <div>
         <Link to="/customer-support" className="text-opsly-purple mb-4 inline-block">← Back</Link>
         <h1 className="text-4xl font-bold text-white mb-8">Ticket Details</h1>

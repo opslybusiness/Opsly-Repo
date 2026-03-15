@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 
 from app.database import get_db
-from app.models import FinancialData, User, FraudDetection
+from app.models import FinancialData, User
 from app.auth import get_user_id_from_token
 from app.routes.fraud_detection import check_transaction_for_fraud_internal
 
@@ -105,63 +105,68 @@ def add_financial_data(
             detail="Amount must be greater than 0"
         )
 
-    # Parse date
+    # Parse date - supports multiple formats including datetime-local input (YYYY-MM-DDTHH:MM)
     try:
         if len(date) == 10:  # YYYY-MM-DD
             parsed_date = datetime.strptime(date, "%Y-%m-%d")
-        else:
+        elif 'T' in date:  # datetime-local format: YYYY-MM-DDTHH:MM or YYYY-MM-DDTHH:MM:SS
+            if len(date) == 16:  # YYYY-MM-DDTHH:MM
+                parsed_date = datetime.strptime(date, "%Y-%m-%dT%H:%M")
+            else:  # YYYY-MM-DDTHH:MM:SS
+                parsed_date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S")
+        else:  # YYYY-MM-DD HH:MM:SS
             parsed_date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM:SS")
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD, YYYY-MM-DDTHH:MM, or YYYY-MM-DD HH:MM:SS")
 
     # Validate use_chip if provided
-    if use_chip and use_chip not in ["Swipe Transaction", "Online Transaction"]:
+    valid_use_chip = ["Swipe Transaction", "Chip Transaction", "Online Transaction"]
+    if use_chip and use_chip not in valid_use_chip:
         raise HTTPException(
             status_code=400,
-            detail="use_chip must be either 'Swipe Transaction' or 'Online Transaction'"
+            detail=f"use_chip must be one of: {', '.join(valid_use_chip)}"
         )
 
-    # Create financial data entry (always expense)
+    # Automatically check for fraud before creating entry
+    is_fraud = None
+    fraud_probability = None
+    try:
+        is_fraud, fraud_probability = check_transaction_for_fraud_internal(
+            amount=abs(amount),
+            transaction_date=parsed_date,
+            use_chip=use_chip,
+            category=category,
+            user_uuid=user_uuid,
+            db=db
+        )
+    except Exception as e:
+        # If fraud check fails, continue anyway (don't fail the transaction)
+        print(f"Error checking transaction for fraud: {str(e)}")
+
+    # Create financial data entry with fraud detection results
     financial_entry = FinancialData(
         user_id=user_uuid,
         date=parsed_date,
         amount=abs(amount),
         category=category,
         use_chip=use_chip,
-        transaction_type='expense'
+        transaction_type='expense',
+        is_fraud=is_fraud,
+        fraud_probability=fraud_probability
     )
 
     db.add(financial_entry)
     db.commit()
     db.refresh(financial_entry)
 
-    # Automatically check for fraud
-    try:
-        is_fraud, fraud_probability = check_transaction_for_fraud_internal(
-            amount=abs(amount),
-            transaction_date=parsed_date,
-            merchant_name=None,
-            merchant_state=None,
-            transaction_id=str(financial_entry.id)
-        )
-        
-        # Store fraud detection result
-        fraud_detection = FraudDetection(
-            user_id=user_uuid,
-            transaction_id=str(financial_entry.id),
-            amount=abs(amount),
-            is_fraud=is_fraud,
-            fraud_probability=fraud_probability,
-            merchant_name=None,
-            merchant_state=None,
-            transaction_date=parsed_date
-        )
-        db.add(fraud_detection)
-        db.commit()
-    except Exception as e:
-        # If fraud check fails, continue anyway (don't fail the transaction)
-        print(f"Error checking transaction for fraud: {str(e)}")
-
+    # Determine fraud risk level
+    fraud_risk = "low"
+    if fraud_probability is not None:
+        if fraud_probability > 0.7:
+            fraud_risk = "high"
+        elif fraud_probability > 0.3:
+            fraud_risk = "medium"
+    
     return {
         "status": "success",
         "message": "Expense added successfully",
@@ -170,7 +175,10 @@ def add_financial_data(
             "date": financial_entry.date.isoformat(),
             "amount": float(financial_entry.amount),
             "category": financial_entry.category,
-            "use_chip": financial_entry.use_chip
+            "use_chip": financial_entry.use_chip,
+            "is_fraud": is_fraud,
+            "fraud_probability": fraud_probability,
+            "fraud_risk": fraud_risk
         }
     }
 
@@ -298,7 +306,6 @@ def upload_financial_data_csv(
                 
                 # Prepare bulk insert data
                 financial_entries = []
-                fraud_entries = []
                 
                 for idx, row in chunk_df.iterrows():
                     try:
@@ -319,50 +326,42 @@ def upload_financial_data_csv(
                         
                         if use_chip and pd.notna(use_chip):
                             use_chip = str(use_chip).strip()
-                            if use_chip not in ["Swipe Transaction", "Online Transaction"]:
+                            if use_chip not in ["Swipe Transaction", "Chip Transaction", "Online Transaction"]:
                                 use_chip = None
                         else:
                             use_chip = None
                         
+                        # Fraud detection (optional, can be slow for large files)
+                        is_fraud = None
+                        fraud_probability = None
+                        if not skip_fraud_check:
+                            try:
+                                is_fraud, fraud_probability = check_transaction_for_fraud_internal(
+                                    amount=transaction_amount,
+                                    transaction_date=transaction_date,
+                                    use_chip=use_chip,
+                                    category=category,
+                                    user_uuid=user_uuid,
+                                    db=db
+                                )
+                                
+                                if is_fraud == 1:
+                                    fraud_detected_count += 1
+                            except Exception as e:
+                                print(f"Error checking transaction for fraud: {str(e)}")
+                        
+                        # Create financial entry with fraud detection results
                         financial_entry = FinancialData(
                             user_id=user_uuid,
                             date=transaction_date,
                             amount=transaction_amount,
                             category=category,
                             use_chip=use_chip,
-                            transaction_type='expense'
+                            transaction_type='expense',
+                            is_fraud=is_fraud,
+                            fraud_probability=fraud_probability
                         )
                         financial_entries.append(financial_entry)
-                        
-                        # Fraud detection (optional, can be slow for large files)
-                        if not skip_fraud_check:
-                            try:
-                                merchant_name = row.get('merchant_name') if 'merchant_name' in row else None
-                                merchant_state = row.get('merchant_state') if 'merchant_state' in row else None
-                                
-                                is_fraud, fraud_probability = check_transaction_for_fraud_internal(
-                                    amount=transaction_amount,
-                                    transaction_date=transaction_date,
-                                    merchant_name=merchant_name if not pd.isna(merchant_name) else None,
-                                    merchant_state=merchant_state if not pd.isna(merchant_state) else None,
-                                    transaction_id=None  # Will be set after insert
-                                )
-                                
-                                if is_fraud == 1:
-                                    fraud_detected_count += 1
-                                
-                                # Store fraud detection (will link transaction_id after bulk insert)
-                                fraud_entries.append({
-                                    'amount': transaction_amount,
-                                    'is_fraud': is_fraud,
-                                    'fraud_probability': fraud_probability,
-                                    'merchant_name': merchant_name if not pd.isna(merchant_name) else None,
-                                    'merchant_state': merchant_state if not pd.isna(merchant_state) else None,
-                                    'transaction_date': transaction_date,
-                                    'entry_index': len(financial_entries) - 1
-                                })
-                            except Exception as e:
-                                print(f"Error checking transaction for fraud: {str(e)}")
                         
                     except Exception as e:
                         errors.append(f"Chunk {chunk_num}, Row {idx}: {str(e)}")
@@ -387,30 +386,6 @@ def upload_financial_data_csv(
                         for entry in batch:
                             db.add(entry)
                         db.flush()  # Flush to get IDs
-                        
-                        # If fraud checking is enabled, add fraud detection records
-                        if not skip_fraud_check and fraud_entries:
-                            fraud_batch = []
-                            for fraud_entry in fraud_entries:
-                                entry_idx = fraud_entry['entry_index']
-                                if i <= entry_idx < i + BATCH_SIZE:
-                                    entry = batch[entry_idx - i]
-                                    fraud_detection = FraudDetection(
-                                        user_id=user_uuid,
-                                        transaction_id=str(entry.id),
-                                        amount=fraud_entry['amount'],
-                                        is_fraud=fraud_entry['is_fraud'],
-                                        fraud_probability=fraud_entry['fraud_probability'],
-                                        merchant_name=fraud_entry['merchant_name'],
-                                        merchant_state=fraud_entry['merchant_state'],
-                                        transaction_date=fraud_entry['transaction_date']
-                                    )
-                                    fraud_batch.append(fraud_detection)
-                            
-                            if fraud_batch:
-                                for fd in fraud_batch:
-                                    db.add(fd)
-                        
                         chunk_added += len(batch)
                     except Exception as e:
                         db.rollback()

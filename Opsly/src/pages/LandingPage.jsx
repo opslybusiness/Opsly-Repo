@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { FaGoogle, FaCalendarAlt, FaEnvelope, FaVideo, FaRobot } from 'react-icons/fa'
-import { HiPhone, HiThumbUp, HiChartBar, HiUser, HiChat } from 'react-icons/hi'
+import { HiPhone, HiThumbUp, HiChartBar, HiUser } from 'react-icons/hi'
 
 function LandingPage() {
   return (
@@ -21,15 +21,14 @@ function LandingPage() {
           </div>
           <nav className="hidden md:flex items-center gap-4 lg:gap-8">
             <Link to="/about-us" className="text-white hover:text-opsly-purple transition text-sm lg:text-base">About Us</Link>
-            <Link to="/chat" className="flex items-center gap-2 text-white hover:text-opsly-purple transition text-sm lg:text-base">
-              <HiChat className="text-base lg:text-lg flex-shrink-0" />
-              <span>Chat Support</span>
+            <Link to="/chat" className="text-white hover:text-opsly-purple transition text-sm lg:text-base">
+              Chat Support Trial
             </Link>
           </nav>
         </div>
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          <Link to="/chat" className="md:hidden flex items-center gap-1 text-white hover:text-opsly-purple transition text-sm p-2">
-            <HiChat className="text-base flex-shrink-0" />
+          <Link to="/chat" className="md:hidden text-white hover:text-opsly-purple transition text-sm p-2">
+            Chat Support Trial
           </Link>
           <Link to="/signup" className="px-3 sm:px-6 py-2 bg-gradient-to-r from-opsly-purple to-purple-600 text-white rounded-lg hover:opacity-90 transition text-sm sm:text-base whitespace-nowrap">
             Sign Up
@@ -49,7 +48,7 @@ function LandingPage() {
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-center mb-4 font-inter leading-tight px-2">
             <div className="bg-gradient-to-r from-white to-opsly-purple bg-clip-text text-transparent">smart support</div>
-            <div className="bg-gradient-to-r from-opsly-purple to-white bg-clip-text text-transparent">strong decisions.</div>
+            <div className="bg-gradient-to-r from-opsly-purple to-white bg-clip-text text-transparent pb-1">strong decisions.</div>
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-8 sm:mb-10 md:mb-12 text-center px-4 max-w-2xl">
             Efficiently automate your business and boost productivity.
@@ -78,12 +77,12 @@ function LandingPage() {
           
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 relative z-10 pb-4">
           {/* Integrations Card */}
-          <div className="bg-gray-100 rounded-lg p-6 sm:p-8 shadow-lg" style={{ boxShadow: '0 4px 6px -1px rgba(94, 94, 94, 0.3), 0 2px 4px -1px rgba(94, 94, 94, 0.2)', border: '2px solid #5E5E5E' }}>
-            <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 sm:mb-6">Integrations</h3>
-            <div className="flex gap-4 sm:gap-6 md:gap-8 justify-center sm:justify-start flex-wrap">
-              <img src="/Gmail.png" alt="Gmail" className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0" />
-              <img src="/Meet.png" alt="Meet" className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0" />
-              <img src="/Calender.png" alt="Calendar" className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0" />
+          <div className="bg-gray-100 rounded-lg p-6 sm:p-8 shadow-lg flex flex-col" style={{ boxShadow: '0 4px 6px -1px rgba(94, 94, 94, 0.3), 0 2px 4px -1px rgba(94, 94, 94, 0.2)', border: '2px solid #5E5E5E' }}>
+            <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 sm:mb-6 text-center">Integrations</h3>
+            <div className="flex gap-4 sm:gap-5 justify-center items-center flex-1">
+              <img src="/Gmail.png" alt="Gmail" className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover flex-shrink-0" />
+              <img src="/Meet.png" alt="Meet" className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover flex-shrink-0" />
+              <img src="/Calender.png" alt="Calendar" className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover flex-shrink-0" />
             </div>
           </div>
 
