@@ -30,7 +30,7 @@ This guide will help you set up Supabase email/password authentication for your 
 
 ## Step 4: Set Up Environment Variables
 
-1. In your `Opsly` folder, create a `.env` file (copy from `.env.example` if it exists)
+1. In your `frontend` folder, create a `.env` file (copy from `.env.example` if it exists)
 2. Add your Supabase credentials:
 
 ```env
@@ -56,7 +56,7 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ## Step 6: Test Your Setup
 
-1. Make sure your `.env` file is in the `Opsly` folder
+1. Make sure your `.env` file is in the `frontend` folder
 2. Restart your development server:
    ```bash
    npm run dev
@@ -68,7 +68,7 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ## Troubleshooting
 
 ### "Missing Supabase environment variables" error
-- Make sure your `.env` file is in the `Opsly` folder (not the root)
+- Make sure your `.env` file is in the `frontend` folder (not the root)
 - Restart your dev server after creating/updating `.env`
 - Check that the variable names start with `VITE_`
 
