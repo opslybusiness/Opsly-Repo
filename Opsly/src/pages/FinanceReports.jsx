@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import DashboardLayout from '../components/DashboardLayout'
 import { Link } from 'react-router-dom'
 import { HiArrowLeft, HiDownload, HiRefresh, HiDocument } from 'react-icons/hi'
 import { getFinancialData, getCategories, getFinancialForecast } from '../services/financeService'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
 import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 
 const COLORS = ['#8B5CF6', '#EC4899', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#6366F1', '#14B8A6']
 
@@ -16,7 +15,6 @@ function FinanceReports() {
   const [error, setError] = useState('')
   const [generatingPDF, setGeneratingPDF] = useState(false)
   const [forecastData, setForecastData] = useState(null)
-  const reportRef = useRef(null)
 
   useEffect(() => {
     fetchData()
@@ -158,618 +156,251 @@ function FinanceReports() {
   }
 
   const handleGeneratePDF = async () => {
-    if (!reportRef.current) return
-    
     try {
       setGeneratingPDF(true)
       
       const pdf = new jsPDF('p', 'mm', 'a4')
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
-      let yPosition = 15
+      const margin = 15
+      const contentWidth = pageWidth - (margin * 2)
+      let y = margin
       
-      // Color scheme
-      const colors = {
-        primary: [139, 92, 246],      // Purple
-        secondary: [236, 72, 153],    // Pink
-        accent: [59, 130, 246],       // Blue
-        success: [16, 185, 129],      // Green
-        warning: [245, 158, 11],      // Orange
-        danger: [239, 68, 68],        // Red
-        dark: [31, 41, 55],           // Dark gray
-        light: [243, 244, 246],       // Light gray
-        text: [55, 65, 81]            // Text gray
-      }
+      // Colors
+      const purple = [139, 92, 246]
+      const blue = [59, 130, 246]
+      const green = [16, 185, 129]
+      const red = [239, 68, 68]
+      const orange = [245, 158, 11]
+      const gray = [107, 114, 128]
+      const darkGray = [55, 65, 81]
       
-      // Helper to capture chart as image
-      const captureChart = async (chartSelector) => {
-        try {
-          const chartElement = document.querySelector(chartSelector)
-          if (!chartElement) return null
-          
-          const canvas = await html2canvas(chartElement, {
-            backgroundColor: '#1F2937',
-            scale: 2,
-            logging: false
-          })
-          return canvas.toDataURL('image/png')
-        } catch (err) {
-          console.warn('Could not capture chart:', err)
-          return null
-        }
-      }
-
-      // Helper function to add a new page if needed
-      const checkNewPage = (requiredHeight) => {
-        if (yPosition + requiredHeight > pageHeight - 20) {
+      // Helper: Check if new page needed
+      const needsNewPage = (height) => {
+        if (y + height > pageHeight - 25) {
           pdf.addPage()
-          yPosition = 15
+          y = margin
           return true
         }
         return false
       }
       
-      // Helper to draw a colored box/header
-      const drawHeaderBox = (title, y, color = colors.primary) => {
+      // Helper: Draw section header
+      const drawHeader = (title, color = purple) => {
+        needsNewPage(15)
         pdf.setFillColor(...color)
-        pdf.roundedRect(10, y - 5, pageWidth - 20, 8, 2, 2, 'F')
+        pdf.rect(margin, y, contentWidth, 8, 'F')
         pdf.setTextColor(255, 255, 255)
         pdf.setFont('helvetica', 'bold')
-        pdf.setFontSize(14)
-        pdf.text(title, 15, y + 1)
-        pdf.setTextColor(...colors.text)
-        pdf.setFont('helvetica', 'normal')
-        return y + 8 // Return position after header with more spacing
+        pdf.setFontSize(11)
+        pdf.text(title, margin + 4, y + 5.5)
+        y += 12
       }
       
-      // Helper to draw a card/box
-      const drawCard = (x, y, width, height, title, content) => {
-        // Card background
-        pdf.setFillColor(250, 250, 250)
-        pdf.roundedRect(x, y, width, height, 2, 2, 'F')
+      // Helper: Draw table row
+      const drawRow = (cols, widths, isHeader = false, bgColor = null) => {
+        const rowHeight = 7
+        needsNewPage(rowHeight)
         
-        // Border
-        pdf.setDrawColor(220, 220, 220)
-        pdf.setLineWidth(0.5)
-        pdf.roundedRect(x, y, width, height, 2, 2)
-        
-        // Title
-        if (title) {
-          pdf.setFillColor(...colors.primary)
-          pdf.roundedRect(x, y, width, 6, 2, 2, 'F')
-          pdf.setTextColor(255, 255, 255)
-          pdf.setFont('helvetica', 'bold')
-          pdf.setFontSize(10)
-          pdf.text(title, x + 2, y + 4)
-          pdf.setTextColor(...colors.text)
-          pdf.setFont('helvetica', 'normal')
+        if (bgColor) {
+          pdf.setFillColor(...bgColor)
+          pdf.rect(margin, y - 1, contentWidth, rowHeight, 'F')
         }
         
-        return y + (title ? 6 : 0)
-      }
-
-      // Cover Page Header with gradient effect
-      pdf.setFillColor(...colors.primary)
-      pdf.rect(0, 0, pageWidth, 50)
-      
-      // Title
-      pdf.setTextColor(255, 255, 255)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setFontSize(32)
-      pdf.text('Financial Report', pageWidth / 2, 25, { align: 'center' })
-      
-      // Subtitle
-      pdf.setFontSize(14)
-      pdf.setFont('helvetica', 'normal')
-      pdf.text('Comprehensive Expense Analytics & Insights', pageWidth / 2, 35, { align: 'center' })
-      
-      // Date badge
-      pdf.setFillColor(255, 255, 255)
-      pdf.setTextColor(...colors.primary)
-      pdf.roundedRect(pageWidth / 2 - 40, 40, 80, 6, 1, 1, 'F')
-      pdf.setFontSize(9)
-      pdf.text(
-        new Date().toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric'
-        }),
-        pageWidth / 2,
-        43.5,
-        { align: 'center' }
-      )
-      
-      yPosition = 60
-      
-      // Decorative line
-      pdf.setDrawColor(...colors.primary)
-      pdf.setLineWidth(0.5)
-      pdf.line(10, yPosition, pageWidth - 10, yPosition)
-      yPosition += 10
-
-      // Summary Section with Cards
-      yPosition += 5 // Extra space before first header
-      yPosition = drawHeaderBox('Summary Statistics', yPosition, colors.primary)
-      yPosition += 3
-      
-      // Create summary cards in a grid
-      const cardWidth = (pageWidth - 30) / 2
-      const cardHeight = 20
-      const summaryCards = [
-        { label: 'Total Transactions', value: totalTransactions.toString(), color: colors.accent },
-        { label: 'Total Expenses', value: formatCurrency(totalExpense), color: colors.danger },
-        { label: 'Avg Transaction', value: formatCurrency(avgTransaction), color: colors.success },
-        { label: 'Categories', value: Object.keys(categoryData).length.toString(), color: colors.warning }
-      ]
-      
-      let cardX = 10
-      let cardY = yPosition
-      summaryCards.forEach((card, index) => {
-        if (index > 0 && index % 2 === 0) {
-          cardY += cardHeight + 5
-          cardX = 10
-        }
+        pdf.setFont('helvetica', isHeader ? 'bold' : 'normal')
+        pdf.setFontSize(isHeader ? 9 : 8)
         
-        const contentY = drawCard(cardX, cardY, cardWidth, cardHeight, null, null)
-        
-        // Label
-        pdf.setFontSize(10)
-        pdf.setTextColor(...colors.text)
-        pdf.setFont('helvetica', 'normal')
-        pdf.text(card.label, cardX + 5, contentY + 4)
-        
-        // Value
-        pdf.setFontSize(14)
-        pdf.setFont('helvetica', 'bold')
-        pdf.setTextColor(...card.color)
-        pdf.text(card.value, cardX + cardWidth / 2, contentY + 10, { align: 'center' })
-        
-        cardX += cardWidth + 10
-      })
-      
-      yPosition = cardY + cardHeight + 20
-
-      // Monthly Trend Data Table with styling
-      checkNewPage(50)
-      yPosition += 5 // Extra space before header
-      yPosition = drawHeaderBox('Monthly Expense Trend', yPosition, colors.accent)
-      yPosition += 3
-      
-      // Table header with background
-      pdf.setFillColor(...colors.accent)
-      pdf.roundedRect(10, yPosition, pageWidth - 20, 7, 1, 1, 'F')
-      pdf.setTextColor(255, 255, 255)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setFontSize(10)
-      pdf.text('Month', 15, yPosition + 4.5)
-      pdf.text('Amount', pageWidth - 60, yPosition + 4.5, { align: 'right' })
-      yPosition += 7
-
-      pdf.setFontSize(9)
-      pdf.setFont('helvetica', 'normal')
-      pdf.setTextColor(...colors.text)
-      
-      trendChartData.forEach((item, index) => {
-        checkNewPage(8)
-        
-        // Alternate row colors
-        if (index % 2 === 0) {
-          pdf.setFillColor(250, 250, 250)
-          pdf.rect(10, yPosition - 4, pageWidth - 20, 7, 'F')
-        }
-        
-        // Month column (left aligned)
-        pdf.setFont('helvetica', 'normal')
-        pdf.setTextColor(...colors.text)
-        pdf.text(item.month, 15, yPosition + 2)
-        
-        // Amount column (right aligned)
-        pdf.setFont('helvetica', 'bold')
-        pdf.setTextColor(...colors.danger)
-        pdf.text(formatCurrency(item.amount), pageWidth - 15, yPosition + 2, { align: 'right' })
-        
-        pdf.setTextColor(...colors.text)
-        pdf.setFont('helvetica', 'normal')
-        yPosition += 7
-      })
-      
-      // Bottom border
-      pdf.setDrawColor(220, 220, 220)
-      pdf.line(10, yPosition, pageWidth - 10, yPosition)
-      yPosition += 8
-
-      // Category Breakdown with visual bars
-      checkNewPage(60)
-      yPosition = drawHeaderBox('Expense by Category', yPosition, colors.secondary)
-      yPosition += 3
-      
-      // Table header
-      pdf.setFillColor(...colors.secondary)
-      pdf.roundedRect(10, yPosition, pageWidth - 20, 7, 1, 1, 'F')
-      pdf.setTextColor(255, 255, 255)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setFontSize(10)
-      pdf.text('Category', 15, yPosition + 4.5)
-      pdf.text('Amount', pageWidth - 80, yPosition + 4.5, { align: 'right' })
-      pdf.text('%', pageWidth - 15, yPosition + 4.5, { align: 'right' })
-      yPosition += 7
-
-      pdf.setFontSize(9)
-      pdf.setFont('helvetica', 'normal')
-      const totalForPct = pieChartData.reduce((sum, item) => sum + item.value, 0)
-      const maxAmount = Math.max(...pieChartData.map(item => item.value))
-      
-      pieChartData.forEach((item, index) => {
-        checkNewPage(10)
-        
-        // Alternate row colors
-        if (index % 2 === 0) {
-          pdf.setFillColor(250, 250, 250)
-          pdf.rect(10, yPosition - 4, pageWidth - 20, 8, 'F')
-        }
-        
-        const percentage = totalForPct > 0 ? ((item.value / totalForPct) * 100).toFixed(1) : 0
-        
-        // Category name (left column)
-        pdf.setFont('helvetica', 'normal')
-        pdf.setFontSize(9)
-        pdf.setTextColor(...colors.text)
-        const categoryName = item.name.length > 22 ? item.name.substring(0, 22) + '...' : item.name
-        pdf.text(categoryName, 15, yPosition + 2)
-        
-        // Visual progress bar (between category and amount)
-        const barWidth = ((item.value / maxAmount) * 50) // Fixed width calculation
-        const barX = 90
-        const barColors = [
-          colors.primary,
-          colors.secondary,
-          colors.accent,
-          colors.success,
-          colors.warning,
-          colors.danger
-        ]
-        pdf.setFillColor(...(barColors[index % barColors.length]))
-        pdf.roundedRect(barX, yPosition, barWidth, 4, 1, 1, 'F')
-        
-        // Amount (middle-right column)
-        pdf.setFont('helvetica', 'bold')
-        pdf.setFontSize(9)
-        pdf.setTextColor(...colors.danger)
-        pdf.text(formatCurrency(item.value), pageWidth - 50, yPosition + 2, { align: 'right' })
-        
-        // Percentage badge (right column)
-        pdf.setFillColor(...colors.primary)
-        pdf.roundedRect(pageWidth - 35, yPosition, 25, 4, 1, 1, 'F')
-        pdf.setTextColor(255, 255, 255)
-        pdf.setFontSize(8)
-        pdf.text(`${percentage}%`, pageWidth - 22.5, yPosition + 2, { align: 'center' })
-        
-        pdf.setFont('helvetica', 'normal')
-        pdf.setFontSize(9)
-        pdf.setTextColor(...colors.text)
-        yPosition += 8
-      })
-      
-      pdf.setDrawColor(220, 220, 220)
-      pdf.line(10, yPosition, pageWidth - 10, yPosition)
-      yPosition += 8
-
-      // Payment Methods with visual indicators
-      checkNewPage(40)
-      yPosition = drawHeaderBox('Payment Methods', yPosition, colors.success)
-      yPosition += 3
-      
-      // Table header
-      pdf.setFillColor(...colors.success)
-      pdf.roundedRect(10, yPosition, pageWidth - 20, 7, 1, 1, 'F')
-      pdf.setTextColor(255, 255, 255)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setFontSize(10)
-      pdf.text('Payment Method', 15, yPosition + 4.5)
-      pdf.text('Transactions', pageWidth - 15, yPosition + 4.5, { align: 'right' })
-      yPosition += 7
-
-      pdf.setFontSize(9)
-      pdf.setFont('helvetica', 'normal')
-      const maxCount = Math.max(...paymentChartData.map(item => item.count))
-      
-      paymentChartData.forEach((item, index) => {
-        checkNewPage(8)
-        
-        // Alternate row colors
-        if (index % 2 === 0) {
-          pdf.setFillColor(250, 250, 250)
-          pdf.rect(10, yPosition - 4, pageWidth - 20, 7, 'F')
-        }
-        
-        // Method name (left column)
-        pdf.setFont('helvetica', 'normal')
-        pdf.setFontSize(9)
-        pdf.setTextColor(...colors.text)
-        pdf.text(item.name, 15, yPosition + 2)
-        
-        // Visual bar (middle)
-        const barWidth = ((item.count / maxCount) * 80) // Fixed width
-        const barX = 90
-        pdf.setFillColor(...colors.success)
-        pdf.roundedRect(barX, yPosition, barWidth, 4, 1, 1, 'F')
-        
-        // Count badge (right column)
-        pdf.setFillColor(...colors.success)
-        pdf.roundedRect(pageWidth - 30, yPosition, 20, 4, 1, 1, 'F')
-        pdf.setTextColor(255, 255, 255)
-        pdf.setFont('helvetica', 'bold')
-        pdf.setFontSize(9)
-        pdf.text(item.count.toString(), pageWidth - 20, yPosition + 2, { align: 'center' })
-        
-        pdf.setFont('helvetica', 'normal')
-        pdf.setTextColor(...colors.text)
-        yPosition += 7
-      })
-      
-      pdf.setDrawColor(220, 220, 220)
-      pdf.line(10, yPosition, pageWidth - 10, yPosition)
-      yPosition += 8
-
-      // Forecast Section (if available) - Enhanced styling
-      if (forecastData && forecastData.forecast && forecastData.forecast.length > 0) {
-        checkNewPage(60)
-        yPosition = drawHeaderBox('Expense Forecast', yPosition, colors.warning)
-        yPosition += 3
-        
-        // Table header
-        pdf.setFillColor(...colors.warning)
-        pdf.roundedRect(10, yPosition, pageWidth - 20, 7, 1, 1, 'F')
-        pdf.setTextColor(255, 255, 255)
-        pdf.setFont('helvetica', 'bold')
-        pdf.setFontSize(10)
-        pdf.text('Period', 15, yPosition + 4.5)
-        pdf.text('Forecasted', pageWidth - 80, yPosition + 4.5, { align: 'right' })
-        pdf.text('Range', pageWidth - 15, yPosition + 4.5, { align: 'right' })
-        yPosition += 7
-
-        pdf.setFontSize(9)
-        pdf.setFont('helvetica', 'normal')
-        
-        forecastData.forecast.slice(0, 6).forEach((item, index) => {
-          checkNewPage(8)
+        let x = margin + 3
+        cols.forEach((col, i) => {
+          const width = widths[i]
+          const align = col.align || 'left'
+          const color = col.color || darkGray
           
-          // Alternate row colors
-          if (index % 2 === 0) {
-            pdf.setFillColor(255, 247, 237) // Light orange background
-            pdf.rect(10, yPosition - 4, pageWidth - 20, 7, 'F')
-          }
+          pdf.setTextColor(...color)
           
-          // Period (left column)
-          pdf.setFont('helvetica', 'normal')
-          pdf.setFontSize(9)
-          pdf.setTextColor(...colors.text)
-          pdf.text(item.date, 15, yPosition + 2)
+          let textX = x
+          if (align === 'right') textX = x + width - 3
+          else if (align === 'center') textX = x + width / 2
           
-          // Forecasted amount (middle column, right aligned)
-          pdf.setFont('helvetica', 'bold')
-          pdf.setFontSize(9)
-          pdf.setTextColor(...colors.warning)
-          pdf.text(formatCurrency(item.forecasted_amount), pageWidth - 100, yPosition + 2, { align: 'right' })
-          
-          // Range (right column, smaller, gray)
-          pdf.setFont('helvetica', 'normal')
-          pdf.setFontSize(8)
-          pdf.setTextColor(150, 150, 150)
-          const rangeText = `${formatCurrency(item.lower_bound)}-${formatCurrency(item.upper_bound)}`
-          pdf.text(rangeText, pageWidth - 15, yPosition + 2, { align: 'right' })
-          
-          pdf.setFontSize(9)
-          pdf.setTextColor(...colors.text)
-          yPosition += 7
+          const text = String(col.text || col).substring(0, 30)
+          pdf.text(text, textX, y + 4, { align })
+          x += width
         })
         
-        pdf.setDrawColor(220, 220, 220)
-        pdf.line(10, yPosition, pageWidth - 10, yPosition)
-        yPosition += 8
-
-        if (forecastData.summary) {
-          checkNewPage(30)
-          
-          // Summary cards
-          const forecastCards = [
-            { label: 'Total Predicted', value: formatCurrency(forecastData.summary.total_predicted), color: colors.warning },
-            { label: 'Avg Monthly', value: formatCurrency(forecastData.summary.average_monthly), color: colors.accent },
-            { label: 'Historical Avg', value: formatCurrency(forecastData.summary.historical_average), color: colors.success }
-          ]
-          
-          const forecastCardWidth = (pageWidth - 30) / 3
-          let forecastCardX = 10
-          forecastCards.forEach((card, index) => {
-            const cardY = yPosition
-            const contentY = drawCard(forecastCardX, cardY, forecastCardWidth - 3, 15, null, null)
-            
-            pdf.setFontSize(8)
-            pdf.setTextColor(...colors.text)
-            pdf.setFont('helvetica', 'normal')
-            pdf.text(card.label, forecastCardX + forecastCardWidth / 2 - 15, contentY + 4, { align: 'center' })
-            
-            pdf.setFontSize(11)
-            pdf.setFont('helvetica', 'bold')
-            pdf.setTextColor(...card.color)
-            pdf.text(card.value, forecastCardX + forecastCardWidth / 2 - 15, contentY + 9, { align: 'center' })
-            
-            forecastCardX += forecastCardWidth
-          })
-          
-          yPosition += 20
-        }
+        y += rowHeight
       }
 
-      // Recent Transactions - Enhanced
-      checkNewPage(50)
-      yPosition = drawHeaderBox('Recent Transactions', yPosition, colors.dark)
+      // ===== COVER / HEADER =====
+      pdf.setFillColor(...purple)
+      pdf.rect(0, 0, pageWidth, 45, 'F')
       
-      // Table header
-      pdf.setFillColor(240, 240, 240) // Light gray background
-      pdf.roundedRect(10, yPosition, pageWidth - 20, 7, 2, 2, 'F')
-      
-      pdf.setFontSize(10)
+      pdf.setTextColor(255, 255, 255)
       pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(...colors.dark)
-      pdf.text('Date', 15, yPosition + 4.5)
-      pdf.text('Category', 60, yPosition + 4.5)
-      pdf.text('Amount', pageWidth - 15, yPosition + 4.5, { align: 'right' })
-      yPosition += 10
-
-      pdf.setFontSize(8)
+      pdf.setFontSize(28)
+      pdf.text('Financial Report', pageWidth / 2, 20, { align: 'center' })
+      
       pdf.setFont('helvetica', 'normal')
-      transactions.slice(0, 15).forEach((t, index) => {
-        checkNewPage(7)
-        
-        // Alternate row colors
-        if (index % 2 === 0) {
-          pdf.setFillColor(248, 250, 252)
-          pdf.rect(10, yPosition - 4, pageWidth - 20, 6, 'F')
+      pdf.setFontSize(11)
+      pdf.text('Expense Analytics & Insights', pageWidth / 2, 30, { align: 'center' })
+      
+      pdf.setFontSize(9)
+      pdf.text(new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', month: 'long', day: 'numeric' 
+      }), pageWidth / 2, 38, { align: 'center' })
+      
+      y = 55
+
+      // ===== SUMMARY SECTION =====
+      drawHeader('Summary Statistics', purple)
+      
+      const summaryData = [
+        ['Total Transactions', totalTransactions.toString()],
+        ['Total Expenses', formatCurrency(totalExpense)],
+        ['Average Transaction', formatCurrency(avgTransaction)],
+        ['Categories Used', Object.keys(categoryData).length.toString()]
+      ]
+      
+      // Draw summary in 2x2 grid
+      const boxWidth = contentWidth / 2 - 3
+      const boxHeight = 18
+      let boxX = margin
+      let boxY = y
+      
+      summaryData.forEach((item, i) => {
+        if (i === 2) {
+          boxY += boxHeight + 4
+          boxX = margin
         }
         
-        const date = t.date ? new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : '-'
-        const category = (t.category || 'Uncategorized').substring(0, 20)
+        pdf.setFillColor(248, 250, 252)
+        pdf.roundedRect(boxX, boxY, boxWidth, boxHeight, 2, 2, 'F')
+        pdf.setDrawColor(229, 231, 235)
+        pdf.roundedRect(boxX, boxY, boxWidth, boxHeight, 2, 2, 'S')
         
-        // Date column
-        pdf.setTextColor(...colors.text)
-        pdf.text(date, 15, yPosition + 2)
-        
-        // Category column
-        pdf.text(category, 60, yPosition + 2)
-        
-        // Amount column (right aligned)
-        pdf.setFont('helvetica', 'bold')
-        pdf.setTextColor(...colors.danger)
-        pdf.text(formatCurrency(t.amount || 0), pageWidth - 15, yPosition + 2, { align: 'right' })
         pdf.setFont('helvetica', 'normal')
+        pdf.setFontSize(8)
+        pdf.setTextColor(...gray)
+        pdf.text(item[0], boxX + 5, boxY + 6)
         
-        yPosition += 6
+        pdf.setFont('helvetica', 'bold')
+        pdf.setFontSize(14)
+        pdf.setTextColor(...purple)
+        pdf.text(item[1], boxX + 5, boxY + 14)
+        
+        boxX += boxWidth + 6
+      })
+      
+      y = boxY + boxHeight + 12
+
+      // ===== MONTHLY TREND =====
+      drawHeader('Monthly Expense Trend', blue)
+      
+      const trendWidths = [contentWidth * 0.5, contentWidth * 0.5]
+      drawRow(['Month', { text: 'Amount', align: 'right' }], trendWidths, true, [241, 245, 249])
+      
+      trendChartData.forEach((item, i) => {
+        drawRow([
+          item.month,
+          { text: formatCurrency(item.amount), align: 'right', color: red }
+        ], trendWidths, false, i % 2 === 0 ? [249, 250, 251] : null)
+      })
+      
+      y += 8
+
+      // ===== CATEGORY BREAKDOWN =====
+      drawHeader('Expense by Category', [236, 72, 153])
+      
+      const catWidths = [contentWidth * 0.45, contentWidth * 0.35, contentWidth * 0.2]
+      drawRow(['Category', { text: 'Amount', align: 'right' }, { text: '%', align: 'right' }], catWidths, true, [241, 245, 249])
+      
+      const totalForPct = pieChartData.reduce((sum, item) => sum + item.value, 0)
+      pieChartData.forEach((item, i) => {
+        const pct = totalForPct > 0 ? ((item.value / totalForPct) * 100).toFixed(1) : '0'
+        const catName = item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name
+        drawRow([
+          catName,
+          { text: formatCurrency(item.value), align: 'right', color: red },
+          { text: pct + '%', align: 'right', color: purple }
+        ], catWidths, false, i % 2 === 0 ? [249, 250, 251] : null)
+      })
+      
+      y += 8
+
+      // ===== PAYMENT METHODS =====
+      drawHeader('Payment Methods', green)
+      
+      const payWidths = [contentWidth * 0.7, contentWidth * 0.3]
+      drawRow(['Payment Method', { text: 'Count', align: 'right' }], payWidths, true, [241, 245, 249])
+      
+      paymentChartData.forEach((item, i) => {
+        drawRow([
+          item.name,
+          { text: item.count.toString(), align: 'right', color: green }
+        ], payWidths, false, i % 2 === 0 ? [249, 250, 251] : null)
+      })
+      
+      y += 8
+
+      // ===== FORECAST (if available) =====
+      if (forecastData?.forecast?.length > 0) {
+        drawHeader('Expense Forecast (Next 90 Days)', orange)
+        
+        const forecastWidths = [contentWidth * 0.35, contentWidth * 0.35, contentWidth * 0.3]
+        drawRow(['Date', { text: 'Forecast', align: 'right' }, { text: 'Range', align: 'right' }], forecastWidths, true, [255, 247, 237])
+        
+        forecastData.forecast.slice(0, 8).forEach((item, i) => {
+          const range = `${formatCurrency(item.lower_bound)} - ${formatCurrency(item.upper_bound)}`
+          drawRow([
+            item.date,
+            { text: formatCurrency(item.forecasted_amount), align: 'right', color: orange },
+            { text: range, align: 'right', color: gray }
+          ], forecastWidths, false, i % 2 === 0 ? [255, 251, 245] : null)
+        })
+        
+        y += 8
+      }
+
+      // ===== RECENT TRANSACTIONS =====
+      drawHeader('Recent Transactions', darkGray)
+      
+      const txWidths = [contentWidth * 0.25, contentWidth * 0.45, contentWidth * 0.3]
+      drawRow(['Date', 'Category', { text: 'Amount', align: 'right' }], txWidths, true, [241, 245, 249])
+      
+      transactions.slice(0, 20).forEach((t, i) => {
+        const date = t.date ? new Date(t.date).toLocaleDateString('en-US', { 
+          month: 'short', day: 'numeric', year: '2-digit' 
+        }) : '-'
+        const cat = (t.category || 'Uncategorized').substring(0, 25)
+        drawRow([
+          date,
+          cat,
+          { text: formatCurrency(t.amount || 0), align: 'right', color: red }
+        ], txWidths, false, i % 2 === 0 ? [249, 250, 251] : null)
       })
 
-      // Add chart images with beautiful styling
-      try {
-        await new Promise(resolve => setTimeout(resolve, 800))
-        
-        // Capture Monthly Trend Chart
-        const trendChartImg = await captureChart('[data-chart="trend"]')
-        if (trendChartImg) {
-          checkNewPage(90)
-          yPosition += 5 // Extra space before header
-          yPosition = drawHeaderBox('Monthly Expense Trend Chart', yPosition, colors.accent)
-          yPosition += 5
-          const imgWidth = pageWidth - 20
-          // Calculate proper aspect ratio (assuming chart is roughly 16:9)
-          const imgHeight = (imgWidth * 0.4)
-          
-          // Shadow effect (light gray)
-          pdf.setFillColor(220, 220, 220)
-          pdf.roundedRect(12, yPosition + 2, imgWidth, imgHeight, 3, 3, 'F')
-          
-          // Border with gradient effect
-          pdf.setDrawColor(...colors.accent)
-          pdf.setLineWidth(1)
-          pdf.roundedRect(10, yPosition, imgWidth, imgHeight, 3, 3, 'D')
-          
-          // Inner border
-          pdf.setDrawColor(...colors.accent)
-          pdf.setLineWidth(0.3)
-          pdf.roundedRect(11, yPosition + 1, imgWidth - 2, imgHeight - 2, 2, 2, 'D')
-          
-          pdf.addImage(trendChartImg, 'PNG', 10, yPosition, imgWidth, imgHeight, undefined, 'FAST')
-          yPosition += imgHeight + 15
-        }
-        
-        // Capture Category Pie Chart
-        const pieChartImg = await captureChart('[data-chart="category"]')
-        if (pieChartImg) {
-          checkNewPage(90)
-            yPosition = drawHeaderBox('Expense by Category Chart', yPosition, colors.secondary)
-          yPosition -= 5
-          const imgWidth = pageWidth - 20
-          const imgHeight = (imgWidth * 0.4)
-          
-          // Shadow
-          pdf.setFillColor(220, 220, 220)
-          pdf.roundedRect(12, yPosition + 2, imgWidth, imgHeight, 3, 3, 'F')
-          
-          pdf.setDrawColor(...colors.secondary)
-          pdf.setLineWidth(1)
-          pdf.roundedRect(10, yPosition, imgWidth, imgHeight, 3, 3, 'D')
-          pdf.setLineWidth(0.3)
-          pdf.roundedRect(11, yPosition + 1, imgWidth - 2, imgHeight - 2, 2, 2, 'D')
-          
-          pdf.addImage(pieChartImg, 'PNG', 10, yPosition, imgWidth, imgHeight, undefined, 'FAST')
-          yPosition += imgHeight + 15
-        }
-        
-        // Capture Category Bar Chart
-        const barChartImg = await captureChart('[data-chart="bar"]')
-        if (barChartImg) {
-          checkNewPage(90)
-          yPosition = drawHeaderBox('Top Categories Chart', yPosition, colors.primary)
-          yPosition -= 5
-          const imgWidth = pageWidth - 20
-          const imgHeight = (imgWidth * 0.4)
-          
-          // Shadow
-          pdf.setFillColor(220, 220, 220)
-          pdf.roundedRect(12, yPosition + 2, imgWidth, imgHeight, 3, 3, 'F')
-          
-          pdf.setDrawColor(...colors.primary)
-          pdf.setLineWidth(1)
-          pdf.roundedRect(10, yPosition, imgWidth, imgHeight, 3, 3, 'D')
-          pdf.setLineWidth(0.3)
-          pdf.roundedRect(11, yPosition + 1, imgWidth - 2, imgHeight - 2, 2, 2, 'D')
-          
-          pdf.addImage(barChartImg, 'PNG', 10, yPosition, imgWidth, imgHeight, undefined, 'FAST')
-          yPosition += imgHeight + 15
-        }
-      } catch (chartErr) {
-        console.warn('Could not add charts to PDF:', chartErr)
-      }
-      
-      // Enhanced Footer with branding and design
+      // ===== FOOTER ON ALL PAGES =====
       const totalPages = pdf.internal.getNumberOfPages()
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i)
         
-        // Footer background bar
-        pdf.setFillColor(245, 245, 250) // Light purple tint
-        pdf.rect(0, pageHeight - 18, pageWidth, 18, 'F')
-        
-        // Decorative line
-        pdf.setDrawColor(...colors.primary)
+        // Footer line
+        pdf.setDrawColor(...purple)
         pdf.setLineWidth(0.5)
-        pdf.line(10, pageHeight - 17, pageWidth - 10, pageHeight - 17)
+        pdf.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12)
         
-        // Page number with badge
-        pdf.setFillColor(...colors.primary)
-        pdf.roundedRect(pageWidth / 2 - 15, pageHeight - 13, 30, 6, 1, 1, 'F')
+        // Page number
+        pdf.setFont('helvetica', 'normal')
         pdf.setFontSize(8)
-        pdf.setTextColor(255, 255, 255)
-        pdf.setFont('helvetica', 'bold')
-        pdf.text(
-          `Page ${i} of ${totalPages}`,
-          pageWidth / 2,
-          pageHeight - 9.5,
-          { align: 'center' }
-        )
+        pdf.setTextColor(...gray)
+        pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 7, { align: 'center' })
         
-        // Branding with logo area
-        pdf.setFontSize(9)
-        pdf.setTextColor(...colors.primary)
+        // Branding
         pdf.setFont('helvetica', 'bold')
-        pdf.text('Opsly', pageWidth - 15, pageHeight - 9.5, { align: 'right' })
-        
-        pdf.setFontSize(6)
-        pdf.setFont('helvetica', 'normal')
-        pdf.setTextColor(150, 150, 150)
-        pdf.text('Financial Analytics Platform', pageWidth - 15, pageHeight - 6, { align: 'right' })
-        pdf.setFont('helvetica', 'normal')
+        pdf.setTextColor(...purple)
+        pdf.text('Opsly', pageWidth - margin, pageHeight - 7, { align: 'right' })
       }
 
-      // Save PDF
+      // Save
       pdf.save(`financial_report_${new Date().toISOString().split('T')[0]}.pdf`)
       
     } catch (err) {
@@ -782,7 +413,7 @@ function FinanceReports() {
 
   return (
     <DashboardLayout>
-      <div className="min-w-0 max-w-full" ref={reportRef}>
+      <div className="min-w-0 max-w-full">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
@@ -868,7 +499,7 @@ function FinanceReports() {
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* Monthly Trend Chart */}
-              <div className="bg-opsly-card rounded-xl p-5" data-chart="trend">
+              <div className="bg-opsly-card rounded-xl p-5">
                 <h3 className="text-lg font-semibold text-white mb-4">Monthly Expense Trend</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
@@ -895,7 +526,7 @@ function FinanceReports() {
               </div>
 
               {/* Category Breakdown Pie Chart */}
-              <div className="bg-opsly-card rounded-xl p-5" data-chart="category">
+              <div className="bg-opsly-card rounded-xl p-5">
                 <h3 className="text-lg font-semibold text-white mb-4">Expense by Category</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
@@ -928,7 +559,7 @@ function FinanceReports() {
             {/* Second Row Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* Category Bar Chart */}
-              <div className="bg-opsly-card rounded-xl p-5" data-chart="bar">
+              <div className="bg-opsly-card rounded-xl p-5">
                 <h3 className="text-lg font-semibold text-white mb-4">Top Categories by Amount</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
