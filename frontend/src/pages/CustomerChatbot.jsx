@@ -55,8 +55,15 @@ function CustomerChatbot() {
     setIsLoading(true)
 
     try {
-      const response = await sendChatMessage(sessionId, userMessage, true)
-      // Add bot response to chat
+      let response
+      try {
+        // First attempt: with RAG (document context)
+        response = await sendChatMessage(sessionId, userMessage, true)
+      } catch (ragError) {
+        console.warn('RAG attempt failed, retrying without document context:', ragError.message)
+        // Fallback: without RAG — still gets an LLM response
+        response = await sendChatMessage(sessionId, userMessage, false)
+      }
       const botMessage = {
         role: 'assistant',
         content: response.message,
@@ -68,7 +75,7 @@ function CustomerChatbot() {
       console.error('Failed to send message:', error)
       const errorMessage = {
         role: 'assistant',
-        content: `Sorry, I encountered an error. Please try again.`,
+        content: `Sorry, I couldn't process your message. (${error.message || 'Unknown error'}) Please try again.`,
         timestamp: new Date().toISOString(),
       }
       setMessages(prev => [...prev, errorMessage])
