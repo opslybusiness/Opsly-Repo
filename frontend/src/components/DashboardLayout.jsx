@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { HiPhone, HiChartBar, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX } from 'react-icons/hi'
+import { HiPhone, HiChartBar, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX, HiPaperClip } from 'react-icons/hi'
 import { FaSearch, FaBell, FaCoins } from 'react-icons/fa'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
@@ -73,6 +73,14 @@ function DashboardLayout({ children, userName }) {
               </button>
             </div>
             <Link 
+              to="/documents" 
+              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/documents') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+              onClick={() => setShowMobileMenu(false)}
+            >
+              <HiPaperClip className="text-xl text-white flex-shrink-0" />
+              <span className="text-white">AI Documents</span>
+            </Link>
+            <Link 
               to="/customer-support" 
               className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/customer-support') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
               onClick={() => setShowMobileMenu(false)}
@@ -121,6 +129,43 @@ function DashboardLayout({ children, userName }) {
           className="w-10 h-10 flex items-center justify-center mb-6 hover:opacity-80 transition cursor-pointer flex-shrink-0"
         >
           <img src="/logo.png" alt="Opsly Logo" className="w-10 h-10 object-contain" />
+        </Link>
+        <Link to="/documents" className="ai-doc-link mb-4 flex-shrink-0 relative flex items-center justify-center">
+          {/* SVG trimpath rainbow border — drawn on hover */}
+          <svg
+            className="ai-doc-svg absolute pointer-events-none"
+            width="42" height="42"
+            viewBox="0 0 42 42"
+            style={{ top: '-3px', left: '-3px' }}
+          >
+            <defs>
+              <linearGradient id="rainbow-stroke" x1="0%" y1="0%" x2="100%" y2="100%" gradientUnits="userSpaceOnUse">
+                <animateTransform attributeName="gradientTransform" type="rotate" from="0 21 21" to="360 21 21" dur="2s" repeatCount="indefinite" />
+                <stop offset="0%"    stopColor="#f43f5e" />
+                <stop offset="20%"   stopColor="#f97316" />
+                <stop offset="40%"   stopColor="#a855f7" />
+                <stop offset="60%"   stopColor="#06b6d4" />
+                <stop offset="80%"   stopColor="#22c55e" />
+                <stop offset="100%"  stopColor="#f43f5e" />
+              </linearGradient>
+            </defs>
+            <rect
+              x="1.5" y="1.5"
+              width="39" height="39"
+              rx="11"
+              fill="none"
+              stroke="url(#rainbow-stroke)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              className="trimpath-rect"
+            />
+          </svg>
+          {/* Icon */}
+          <span className={`relative z-10 flex items-center justify-center rounded-[0.65rem] w-9 h-9 transition-colors ${
+            isActive('/documents') ? 'bg-gray-700' : 'hover:bg-gray-700'
+          }`}>
+            <HiPaperClip className="text-white text-lg" />
+          </span>
         </Link>
         <Link to="/customer-support" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/customer-support') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
           <HiPhone className="text-xl text-white" />

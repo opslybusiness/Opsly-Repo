@@ -86,11 +86,9 @@ export const clearChatSession = async (sessionId) => {
 export const uploadDocument = async (file, metadata = null) => {
   const formData = new FormData()
   formData.append('file', file)
-  if (metadata) {
-    formData.append('metadata', metadata)
-  }
-  
-  return ragApiClient('/documents/upload', {
+  // metadata is a query param per the API spec, not a form field
+  const qs = metadata ? `?metadata=${encodeURIComponent(metadata)}` : ''
+  return ragApiClient(`/documents/upload${qs}`, {
     method: 'POST',
     body: formData,
   })

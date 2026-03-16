@@ -1,33 +1,22 @@
 import { useState, useEffect, useRef } from 'react'
 import DashboardLayout from '../components/DashboardLayout'
 import { 
-  uploadDocument, 
-  uploadMultipleDocuments,
-  listDocuments, 
-  deleteDocument,
   listChatSessions,
   getChatSession
 } from '../services/chatbotService'
-import { HiPaperClip, HiX, HiTrash, HiUpload, HiChat, HiClock, HiRefresh } from 'react-icons/hi'
+import { HiX, HiChat, HiClock, HiRefresh } from 'react-icons/hi'
 import { FaRobot, FaUser } from 'react-icons/fa'
 
 function RAGChatbot() {
   const [chatSessions, setChatSessions] = useState([])
   const [selectedSession, setSelectedSession] = useState(null)
   const [sessionMessages, setSessionMessages] = useState([])
-  const [documents, setDocuments] = useState([])
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState({})
-  const [showDocumentList, setShowDocumentList] = useState(false)
   const [isLoadingSessions, setIsLoadingSessions] = useState(false)
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const messagesEndRef = useRef(null)
-  const fileInputRef = useRef(null)
 
-  // Load sessions and documents on mount
   useEffect(() => {
     loadChatSessions()
-    loadDocuments()
   }, [])
 
   // Auto-scroll to bottom when messages change
@@ -86,15 +75,6 @@ function RAGChatbot() {
     }
   }
 
-  const loadDocuments = async () => {
-    try {
-      const docs = await listDocuments()
-      setDocuments(docs || [])
-    } catch (error) {
-      console.error('Failed to load documents:', error)
-    }
-  }
-
   const formatDate = (dateString) => {
     if (!dateString) return 'Unknown date'
     try {
@@ -117,72 +97,6 @@ function RAGChatbot() {
     }
   }
 
-  const handleFileUpload = async (files) => {
-    if (!files || files.length === 0) return
-
-    const fileArray = Array.from(files)
-    setIsUploading(true)
-    
-    try {
-      if (fileArray.length === 1) {
-        setUploadProgress({ [fileArray[0].name]: 'uploading' })
-        await uploadDocument(fileArray[0])
-        setUploadProgress({ [fileArray[0].name]: 'success' })
-      } else {
-        fileArray.forEach(file => {
-          setUploadProgress(prev => ({ ...prev, [file.name]: 'uploading' }))
-        })
-        await uploadMultipleDocuments(fileArray)
-        fileArray.forEach(file => {
-          setUploadProgress(prev => ({ ...prev, [file.name]: 'success' }))
-        })
-      }
-      
-      // Reload documents list
-      await loadDocuments()
-      
-      // Clear progress after a delay
-      setTimeout(() => {
-        setUploadProgress({})
-      }, 2000)
-    } catch (error) {
-      console.error('Failed to upload documents:', error)
-      fileArray.forEach(file => {
-        setUploadProgress(prev => ({ ...prev, [file.name]: 'error' }))
-      })
-      alert(`Failed to upload documents: ${error.message}`)
-    } finally {
-      setIsUploading(false)
-    }
-  }
-
-  const handleFileSelect = (e) => {
-    handleFileUpload(e.target.files)
-    // Reset input so same file can be selected again
-    e.target.value = ''
-  }
-
-  const handleDrop = (e) => {
-    e.preventDefault()
-    handleFileUpload(e.dataTransfer.files)
-  }
-
-  const handleDragOver = (e) => {
-    e.preventDefault()
-  }
-
-  const handleDeleteDocument = async (documentId, filename) => {
-    if (!window.confirm(`Are you sure you want to delete ${filename}?`)) return
-
-    try {
-      await deleteDocument(documentId)
-      await loadDocuments()
-    } catch (error) {
-      console.error('Failed to delete document:', error)
-      alert(`Failed to delete document: ${error.message}`)
-    }
-  }
-
   const handleRefreshSessions = () => {
     loadChatSessions()
   }
@@ -193,18 +107,11 @@ function RAGChatbot() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6 min-w-0">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2">Chatbot Management</h1>
-            <p className="text-sm sm:text-base text-gray-400">Manage documents and view customer chat history</p>
+            <p className="text-sm sm:text-base text-gray-400">
+              View and review customer chat history. Manage AI documents from the AI Documents page.
+            </p>
           </div>
           <div className="flex gap-2 sm:gap-4 flex-shrink-0">
-            <button
-              onClick={() => setShowDocumentList(!showDocumentList)}
-              className="px-3 sm:px-4 py-2 bg-opsly-purple text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
-            >
-              <HiPaperClip className="text-lg sm:text-xl flex-shrink-0" />
-              <span className="hidden sm:inline">Documents</span>
-              <span className="sm:hidden">Docs</span>
-              <span>({documents.length})</span>
-            </button>
             <button
               onClick={handleRefreshSessions}
               className="px-3 sm:px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
@@ -216,90 +123,18 @@ function RAGChatbot() {
         </div>
 
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 min-h-0">
-          {/* Document Upload Section */}
+          {/* Chat Sessions List */}
           <div className="lg:col-span-1 flex flex-col gap-4">
             <div className="bg-opsly-card rounded-lg p-4 sm:p-6 flex-1">
-              <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                <HiUpload className="text-opsly-purple text-lg sm:text-xl flex-shrink-0" />
-                <span>Upload Documents</span>
-              </h2>
-              
-              {/* File Upload Area */}
-              <div
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                className="border-2 border-dashed border-gray-600 rounded-lg p-4 sm:p-6 md:p-8 text-center hover:border-opsly-purple transition cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <HiPaperClip className="text-3xl sm:text-4xl text-gray-400 mx-auto mb-3 sm:mb-4 flex-shrink-0" />
-                <p className="text-sm sm:text-base text-gray-400 mb-1 sm:mb-2">Drag & drop files here</p>
-                <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">or click to browse</p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  accept=".pdf,.txt,.doc,.docx,.md"
-                />
-                <button className="px-3 sm:px-4 py-2 bg-opsly-purple text-white rounded-lg hover:bg-purple-700 transition text-sm sm:text-base">
-                  Select Files
-                </button>
-              </div>
-
-              {/* Upload Progress */}
-              {Object.keys(uploadProgress).length > 0 && (
-                <div className="mt-4 space-y-2">
-                  {Object.entries(uploadProgress).map(([filename, status]) => (
-                    <div key={filename} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400 truncate">{filename}</span>
-                      <span className={`${
-                        status === 'success' ? 'text-green-500' : 
-                        status === 'error' ? 'text-red-500' : 
-                        'text-yellow-500'
-                      }`}>
-                        {status === 'success' ? '✓' : status === 'error' ? '✗' : '...'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Document List */}
-              {showDocumentList && (
-                <div className="mt-4 sm:mt-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3">Uploaded Documents</h3>
-                  <div className="space-y-2 max-h-48 sm:max-h-64 overflow-y-auto hide-scrollbar">
-                    {documents.length === 0 ? (
-                      <p className="text-gray-400 text-xs sm:text-sm">No documents uploaded yet</p>
-                    ) : (
-                      documents.map((doc) => (
-                        <div
-                          key={doc.id || doc.file_id}
-                          className="flex items-center justify-between bg-opsly-dark rounded-lg p-2 sm:p-3 hover:bg-gray-800 transition"
-                        >
-                          <span className="text-gray-300 text-xs sm:text-sm truncate flex-1 min-w-0">
-                            {doc.filename || doc.name || 'Untitled'}
-                          </span>
-                          <button
-                            onClick={() => handleDeleteDocument(doc.id || doc.file_id, doc.filename || doc.name)}
-                            className="ml-2 text-red-400 hover:text-red-500 transition flex-shrink-0"
-                          >
-                            <HiTrash className="text-base sm:text-lg" />
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Chat Sessions List */}
-              <div className="mt-4 sm:mt-6">
-                <h3 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3 flex items-center gap-2">
+              <div className="mb-4">
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-1 flex items-center gap-2">
                   <HiChat className="text-opsly-purple text-lg sm:text-xl flex-shrink-0" />
                   <span>Customer Chats</span>
-                </h3>
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-400">
+                  Documents are managed from the AI Documents page. This view focuses on chat history.
+                </p>
+              </div>
                 <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto hide-scrollbar">
                   {isLoadingSessions ? (
                     <div className="text-center py-4">
@@ -340,7 +175,6 @@ function RAGChatbot() {
                     ))
                   )}
                 </div>
-              </div>
             </div>
           </div>
 

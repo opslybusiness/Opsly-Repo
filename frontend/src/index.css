@@ -53,6 +53,32 @@ body {
   animation: fadeIn 0.4s ease-out forwards;
 }
 
+/* AI Documents icon — trimpath draw on hover */
+@keyframes trimpath-draw {
+  from { stroke-dashoffset: 138; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* SVG border invisible by default, fades in on hover */
+.ai-doc-svg {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.ai-doc-link:hover .ai-doc-svg {
+  opacity: 1;
+}
+
+/* Trimpath rect: dasharray = perimeter (~138px for 39×39 rx=11) */
+.trimpath-rect {
+  stroke-dasharray: 138;
+  stroke-dashoffset: 138;
+}
+
+.ai-doc-link:hover .trimpath-rect {
+  animation: trimpath-draw 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 /* Hide scrollbar but keep scrolling functionality */
 .hide-scrollbar {
   scrollbar-width: none; /* Firefox */
