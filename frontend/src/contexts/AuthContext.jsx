@@ -86,12 +86,14 @@ export const AuthProvider = ({ children }) => {
 
   // Sign out
   const signOut = async () => {
+    // Eagerly clear state so isAuthenticated is false before navigation
+    setUser(null)
+    setSession(null)
+    localStorage.removeItem('token')
+
     try {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
-      
-      localStorage.removeItem('token')
-      // Navigation will be handled by the component calling signOut
       return { error: null }
     } catch (error) {
       console.error('Sign out error:', error)

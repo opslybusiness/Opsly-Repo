@@ -44,6 +44,7 @@ function DashboardLayout({ children, userName }) {
       navigate('/login')
     } catch (error) {
       console.error('Logout error:', error)
+      navigate('/login')
     }
   }
 
