@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom'
-import { FaGoogle, FaCalendarAlt, FaEnvelope, FaVideo, FaRobot } from 'react-icons/fa'
+import { FaGoogle, FaCalendarAlt, FaEnvelope, FaVideo } from 'react-icons/fa'
 import { HiPhone, HiThumbUp, HiChartBar, HiUser } from 'react-icons/hi'
+import { useAuth } from '../contexts/AuthContext'
 
 function LandingPage() {
+  const { isAuthenticated } = useAuth()
+
   return (
     <div className="min-h-screen bg-opsly-dark relative overflow-x-hidden w-full max-w-full">
       {/* Vertical Lines Background Pattern */}
@@ -30,12 +33,20 @@ function LandingPage() {
           <Link to="/chat" className="md:hidden text-white hover:text-opsly-purple transition text-sm p-2">
             Chat Support Trial
           </Link>
-          <Link to="/signup" className="px-3 sm:px-6 py-2 bg-gradient-to-r from-opsly-purple to-purple-600 text-white rounded-lg hover:opacity-90 transition text-sm sm:text-base whitespace-nowrap">
-            Sign Up
-          </Link>
-          <Link to="/login" className="px-3 sm:px-6 py-2 border border-white text-white rounded-lg hover:bg-white hover:text-opsly-dark transition text-sm sm:text-base whitespace-nowrap">
-            Login
-          </Link>
+          {isAuthenticated ? (
+            <Link to="/marketing" className="px-3 sm:px-6 py-2 bg-gradient-to-r from-opsly-purple to-purple-600 text-white rounded-lg hover:opacity-90 transition text-sm sm:text-base whitespace-nowrap">
+              Go to Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/signup" className="px-3 sm:px-6 py-2 bg-gradient-to-r from-opsly-purple to-purple-600 text-white rounded-lg hover:opacity-90 transition text-sm sm:text-base whitespace-nowrap">
+                Sign Up
+              </Link>
+              <Link to="/login" className="px-3 sm:px-6 py-2 border border-white text-white rounded-lg hover:bg-white hover:text-opsly-dark transition text-sm sm:text-base whitespace-nowrap">
+                Login
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -54,13 +65,6 @@ function LandingPage() {
             Efficiently automate your business and boost productivity.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto px-4 sm:px-0">
-            <Link 
-              to="/chat" 
-              className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-opsly-purple to-purple-600 text-white rounded-lg text-base sm:text-lg font-semibold hover:opacity-90 transition flex items-center justify-center gap-2 whitespace-nowrap"
-            >
-              <FaRobot className="text-lg sm:text-xl flex-shrink-0" />
-              <span>Chat with Support</span>
-            </Link>
             <Link 
               to="/about-us"
               className="px-6 sm:px-8 py-3 sm:py-4 bg-transparent border-2 border-white text-white rounded-lg text-base sm:text-lg font-semibold hover:bg-white hover:text-opsly-dark transition whitespace-nowrap text-center"
