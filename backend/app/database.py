@@ -7,7 +7,6 @@ load_dotenv()
 
 # Your DATABASE_URL from .env
 DATABASE_URL =os.getenv("DATABASE_URL")
-print (DATABASE_URL)
 
 # Create synchronous engine
 engine = create_engine(DATABASE_URL, echo=True)

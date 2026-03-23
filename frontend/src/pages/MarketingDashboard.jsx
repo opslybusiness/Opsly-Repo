@@ -61,6 +61,20 @@ function MarketingDashboard() {
   const [postError, setPostError] = useState(null)
   const [postSuccess, setPostSuccess] = useState(null)
 
+  // After Facebook OAuth callback, URL will contain ?connected=true or ?error=...
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('connected') === 'true') {
+      // Clean the URL without reloading
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+    const fbError = params.get('error')
+    if (fbError) {
+      setPostError(`Facebook connection failed: ${fbError.replace(/_/g, ' ')}`)
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [])
+
   useEffect(() => {
     const fetchConnectionStatus = async () => {
       try {
@@ -95,14 +109,23 @@ function MarketingDashboard() {
   }, [authLoading, isAuthenticated, userId])
 
   const handleConnectFacebook = () => {
-    // OAuth redirects require browser navigation, not fetch/axios
-    window.location.href = getApiUrl('/auth/facebook/login')
+    // Pass the Supabase user_id in state so the callback can link accounts
+    const url = userId
+      ? getApiUrl(`/auth/facebook/login?user_id=${userId}`)
+      : getApiUrl('/auth/facebook/login')
+    window.location.href = url
   }
 
   const handlePostSubmit = async (e) => {
     e.preventDefault()
     setPostError(null)
     setPostSuccess(null)
+
+    // Auth check BEFORE setting isPosting so the button never gets stuck
+    if (!isAuthenticated || !userId) {
+      setPostError('Please log in to post')
+      return
+    }
 
     // Validation
     if (!postForm.postToFacebook && !postForm.postToInstagram) {
@@ -116,11 +139,6 @@ function MarketingDashboard() {
     }
 
     setIsPosting(true)
-
-    if (!isAuthenticated || !userId) {
-      setPostError('Please log in to post')
-      return
-    }
 
     try {
       // Create FormData for multipart/form-data

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { HiPhone, HiChartBar, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX, HiPaperClip } from 'react-icons/hi'
+import { HiPhone, HiChartBar, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX, HiPaperClip, HiMicrophone } from 'react-icons/hi'
 import { FaSearch, FaBell, FaCoins } from 'react-icons/fa'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
@@ -113,6 +113,14 @@ function DashboardLayout({ children, userName }) {
               <HiChat className="text-xl text-white" />
               <span className="text-white">Chatbot</span>
             </Link>
+            <Link 
+              to="/voice-bot" 
+              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/voice-bot') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+              onClick={() => setShowMobileMenu(false)}
+            >
+              <HiMicrophone className="text-xl text-white" />
+              <span className="text-white">Voice Bot</span>
+            </Link>
             <div className="mt-auto w-full">
               <button className="w-full mb-4 p-3 rounded-lg hover:bg-gray-700 flex items-center gap-3">
                 <HiCog className="text-xl text-white" />
@@ -179,6 +187,9 @@ function DashboardLayout({ children, userName }) {
         </Link>
         <Link to="/chatbot" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/chatbot') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
           <HiChat className="text-xl text-white" />
+        </Link>
+        <Link to="/voice-bot" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/voice-bot') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+          <HiMicrophone className="text-xl text-white" />
         </Link>
         <div className="mt-auto">
           <button className="mb-4 p-2 rounded-lg hover:bg-gray-700 flex-shrink-0">

@@ -15,6 +15,7 @@ from app.routes.post_scheduling import router as scheduling_router
 from app.routes.finance_forecasting import router as finance_forecasting_router
 from app.routes.fraud_detection import router as fraud_detection_router
 from app.routes.categories import router as categories_router
+from app.routes.voice_bots import router as voice_bots_router
 from fastapi.middleware.cors import CORSMiddleware
 from uuid import UUID as UUIDType
 
@@ -25,6 +26,7 @@ app = FastAPI()
 origins = [
     "https://marketing-minds-three.vercel.app",
     "https://www.opslybusiness.me",
+    "http://localhost:5173",
     "http://localhost:5174",
 ]
 
@@ -42,89 +44,124 @@ app.include_router(insta_analytics_router)
 app.include_router(finance_forecasting_router)
 app.include_router(fraud_detection_router)
 app.include_router(categories_router)
+app.include_router(voice_bots_router)
 
-FB_APP_ID = os.getenv("FB_APP_ID")
+FB_APP_ID    = os.getenv("FB_APP_ID")
 FB_APP_SECRET = os.getenv("FB_APP_SECRET")
-REDIRECT_URI = os.getenv("REDIRECT_URI")
+REDIRECT_URI  = os.getenv("REDIRECT_URI", "http://localhost:8000/auth/facebook/callback").strip().strip('"')
+FRONTEND_URL  = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+# Scopes required for reading pages, analytics AND publishing posts
+_FB_SCOPES = (
+    "pages_show_list,"
+    "pages_read_engagement,"
+    "pages_manage_posts,"
+    "public_profile,"
+    "business_management,"
+   
+)
 
 
 @app.get("/auth/facebook/login")
-def facebook_login():
+def facebook_login(user_id: str = None):
+    """
+    Start Facebook OAuth flow.
+    Pass the Supabase user_id as a query param so the callback can link accounts.
+    """
+    state = user_id or "anonymous"
     auth_url = (
         "https://www.facebook.com/v24.0/dialog/oauth"
         f"?client_id={FB_APP_ID}"
         f"&redirect_uri={REDIRECT_URI}"
-        "&state=test_state"
-        "&scope=pages_show_list,pages_read_engagement,public_profile,business_management,instagram_basic,instagram_manage_insights,instagram_content_publish"
+        f"&state={state}"
+        f"&scope={_FB_SCOPES}"
     )
     return RedirectResponse(auth_url)
 
 
 @app.get("/auth/facebook/callback")
 async def facebook_callback(request: Request, db: Session = Depends(get_db)):
-    code = request.query_params.get("code")
+    code  = request.query_params.get("code")
+    state = request.query_params.get("state", "")   # contains Supabase user_id
+
     if not code:
-        return {"error": "No code returned from Facebook"}
+        return RedirectResponse(f"{FRONTEND_URL}/marketing?error=facebook_denied")
 
-    token_url = (
-        f"https://graph.facebook.com/v24.0/oauth/access_token"
-        f"?client_id={FB_APP_ID}"
-        f"&redirect_uri={REDIRECT_URI}"
-        f"&client_secret={FB_APP_SECRET}"
-        f"&code={code}"
-    )
+    # Exchange code → short-lived token
+    token_response = requests.get(
+        "https://graph.facebook.com/v24.0/oauth/access_token",
+        params={
+            "client_id": FB_APP_ID,
+            "redirect_uri": REDIRECT_URI,
+            "client_secret": FB_APP_SECRET,
+            "code": code,
+        }
+    ).json()
 
-    token_response = requests.get(token_url).json()
     if "access_token" not in token_response:
-        return {"error": "Failed to exchange code for token", "details": token_response}
+        return RedirectResponse(f"{FRONTEND_URL}/marketing?error=token_exchange_failed")
 
     short_token = token_response["access_token"]
 
-    long_url = (
-        f"https://graph.facebook.com/v24.0/oauth/access_token"
-        f"?grant_type=fb_exchange_token"
-        f"&client_id={FB_APP_ID}"
-        f"&client_secret={FB_APP_SECRET}"
-        f"&fb_exchange_token={short_token}"
-    )
-
-    long_token_response = requests.get(long_url).json()
+    # Exchange short-lived → long-lived token (60-day)
+    long_token_response = requests.get(
+        "https://graph.facebook.com/v24.0/oauth/access_token",
+        params={
+            "grant_type": "fb_exchange_token",
+            "client_id": FB_APP_ID,
+            "client_secret": FB_APP_SECRET,
+            "fb_exchange_token": short_token,
+        }
+    ).json()
     long_token = long_token_response.get("access_token", short_token)
 
-    user_info_url = f"https://graph.facebook.com/me?fields=id,name&access_token={long_token}"
-    user_data = requests.get(user_info_url).json()
+    # Get Facebook user info
+    user_data = requests.get(
+        "https://graph.facebook.com/me",
+        params={"fields": "id,name", "access_token": long_token}
+    ).json()
 
     if "id" not in user_data:
-        return {"error": "Could not fetch Facebook user id", "details": user_data}
+        return RedirectResponse(f"{FRONTEND_URL}/marketing?error=user_info_failed")
 
     facebook_id = user_data["id"]
-    name = user_data.get("name")
+    name        = user_data.get("name")
 
-    user = db.query(User).filter(User.facebook_id == facebook_id).first()
+    # Look up both possible rows upfront
+    user_by_uid = None
+    if state and state != "anonymous":
+        try:
+            user_uuid    = UUIDType(state)
+            user_by_uid  = db.query(User).filter(User.user_id == user_uuid).first()
+        except ValueError:
+            pass
 
-    if user:
-        user.session_token = long_token
-        # Note: user_id should be set when user signs up via Supabase auth
-        # If not set, you may need to link it here based on your auth flow
+    user_by_fb = db.query(User).filter(User.facebook_id == facebook_id).first()
+
+    if user_by_uid:
+        # The authoritative row is the one tied to the Supabase user.
+        # If a different orphan row already holds this facebook_id, clear it first
+        # to avoid the unique-constraint violation.
+        if user_by_fb and user_by_fb.id != user_by_uid.id:
+            user_by_fb.facebook_id   = None
+            user_by_fb.session_token = None
+            db.flush()          # write the NULL before we set facebook_id on user_by_uid
+
+        user_by_uid.facebook_id   = facebook_id
+        user_by_uid.name          = name
+        user_by_uid.session_token = long_token
+
+    elif user_by_fb:
+        # No Supabase user found; update the existing Facebook row
+        user_by_fb.name          = name
+        user_by_fb.session_token = long_token
+
     else:
-        user = User(
-            facebook_id=facebook_id,
-            name=name,
-            session_token=long_token
-            # user_id will be set when user creates account via Supabase auth
-        )
-        db.add(user)
+        db.add(User(facebook_id=facebook_id, name=name, session_token=long_token))
 
     db.commit()
 
-    frontend_url = f"http://localhost:5173/marketing?token={long_token}"
-    return RedirectResponse(frontend_url)
-
-    # return {
-    #     "message": "Facebook authentication successful",
-    #     "facebook_id": facebook_id,
-    #     "session_token": long_token
-    # }
+    return RedirectResponse(f"{FRONTEND_URL}/marketing?connected=true")
 
 @app.get("/user/connection-status")
 def get_connection_status(
@@ -157,3 +194,8 @@ def get_connection_status(
         "instagram": has_session_token,
         "name": user.name
     }
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "message": "Opsly backend is running"}

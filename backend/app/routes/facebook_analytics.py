@@ -87,8 +87,6 @@ def get_page_post_analytics(
                 "access_token": page_token
             }
         ).json()
-        print(comments_resp)
-
         total_comments = comments_resp.get("summary", {}).get("total_count", 0)
         comments_list = comments_resp.get("data", [])
 
@@ -104,8 +102,7 @@ def get_page_post_analytics(
             "message": post.get("message"),
             "created_time": post.get("created_time"),
             "likes": like_data.get("summary", {}).get("total_count", 0),
-            #"likes": likes_count,
-            "comments": total_comments,
+            "comment_count": total_comments,
             "comments": comments_list,
             "shares": share_data.get("summary", {}).get("total_count", 0),
             "image_url": post.get("full_picture"),

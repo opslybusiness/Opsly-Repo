@@ -19,6 +19,7 @@ import RAGChatbot from './pages/RAGChatbot'
 import CustomerChatbot from './pages/CustomerChatbot'
 import SupportUs from './pages/SupportUs'
 import AboutUs from './pages/AboutUs'
+import VoiceBot from './pages/VoiceBot'
 
 function App() {
   return (
@@ -99,6 +100,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <RAGChatbot />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/voice-bot" 
+            element={
+              <ProtectedRoute>
+                <VoiceBot />
               </ProtectedRoute>
             } 
           />

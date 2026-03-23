@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 from app.database import Base
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -11,6 +12,11 @@ class User(Base):
     facebook_id = Column(String, unique=True, index=True, nullable=True)  # Nullable since not all users have Facebook
     name = Column(String, nullable=True)
     session_token = Column(String, nullable=True)
+    # Voice bot / Vapi integration
+    voice_bot_number = Column(String, nullable=True, index=True)
+    voice_bot_provider_sid = Column(String, nullable=True, index=True)  # Vapi phone-number object ID
+    vapi_assistant_id = Column(String, nullable=True, index=True)       # Vapi assistant ID (per user)
+    vapi_system_prompt = Column(String, nullable=True)                  # Business-specific system prompt
 
 
 class FinancialData(Base):

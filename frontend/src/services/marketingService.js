@@ -1,29 +1,8 @@
 // src/services/marketingService.js
 import { apiClient } from './api'
 
-export const connectFacebook = async () => {
-  return apiClient('/auth/facebook/login', {
-    method: 'GET',
-  })
-}
-
-export const disconnectFacebook = async () => {
-  return apiClient('/auth/facebook/logout', {
-    method: 'POST',
-  })
-}
-
-export const connectLinkedIn = async () => {
-  return apiClient('/auth/linkedin/login', {
-    method: 'POST',
-  })
-}
-
-export const connectInstagram = async () => {
-  return apiClient('/auth/instagram/login', {
-    method: 'POST',
-  })
-}
+// Facebook OAuth is initiated via full-page navigation (window.location.href),
+// not via fetch, so connectFacebook is handled directly in MarketingDashboard.
 
 export const getFacebookAnalytics = async () => {
   // user_id is now extracted from JWT token in backend
