@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Numeric
+from sqlalchemy import Column, Integer, String, DateTime, Numeric, Text
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 from app.database import Base
@@ -12,6 +12,11 @@ class User(Base):
     facebook_id = Column(String, unique=True, index=True, nullable=True)  # Nullable since not all users have Facebook
     name = Column(String, nullable=True)
     session_token = Column(String, nullable=True)
+    # LinkedIn (member — Share on LinkedIn + OpenID)
+    linkedin_access_token = Column(Text, nullable=True)
+    linkedin_refresh_token = Column(Text, nullable=True)
+    linkedin_token_expires_at = Column(DateTime(timezone=True), nullable=True)
+    linkedin_person_id = Column(String(128), nullable=True, index=True)
     # Voice bot / Vapi integration
     voice_bot_number = Column(String, nullable=True, index=True)
     voice_bot_provider_sid = Column(String, nullable=True, index=True)  # Vapi phone-number object ID

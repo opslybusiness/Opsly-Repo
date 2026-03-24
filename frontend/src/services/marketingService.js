@@ -52,7 +52,17 @@ export const postDynamic = async (formData) => {
       : await response.text()
     
     if (!response.ok) {
-      throw new Error(data.message || data || `HTTP error! status: ${response.status}`)
+      const detail =
+        typeof data === 'object' && data !== null
+          ? data.detail || data.message || data.error
+          : null
+      const msg =
+        detail ||
+        (typeof data === 'string' ? data : null) ||
+        `HTTP error! status: ${response.status}`
+      throw new Error(
+        typeof msg === 'string' ? msg : JSON.stringify(msg)
+      )
     }
     
     return data

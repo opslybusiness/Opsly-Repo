@@ -1,5 +1,5 @@
 import DashboardLayout from '../components/DashboardLayout'
-import { FaFacebook, FaInstagram } from 'react-icons/fa'
+import { FaFacebook, FaInstagram, FaLinkedin } from 'react-icons/fa'
 import { HiCalendar, HiPhotograph } from 'react-icons/hi'
 import { useEffect, useState, useRef } from 'react'
 import { getApiUrl } from '../config/api'
@@ -30,6 +30,7 @@ function MarketingDashboard() {
   const [postForm, setPostForm] = useState({
     postToFacebook: false,
     postToInstagram: false,
+    postToLinkedin: false,
     message: '',
     image: null,
     postNow: true,
@@ -39,8 +40,11 @@ function MarketingDashboard() {
   const [isPosting, setIsPosting] = useState(false)
   const [postError, setPostError] = useState(null)
   const [postSuccess, setPostSuccess] = useState(null)
+  /** null | 'published' | 'scheduled' */
+  const [linkedinToast, setLinkedinToast] = useState(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
   const imageInputRef = useRef(null)
+  const linkedinToastTimerRef = useRef(null)
 
   useEffect(() => {
     if (!postForm.image) {
@@ -52,16 +56,17 @@ function MarketingDashboard() {
     return () => URL.revokeObjectURL(url)
   }, [postForm.image])
 
-  // After Facebook OAuth callback, URL will contain ?connected=true or ?error=...
+  // OAuth return: ?connected=true (Meta), ?connected=linkedin, or ?error=...
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    if (params.get('connected') === 'true') {
-      // Clean the URL without reloading
+    const connected = params.get('connected')
+    if (connected === 'true' || connected === 'linkedin') {
       window.history.replaceState({}, document.title, window.location.pathname)
     }
-    const fbError = params.get('error')
-    if (fbError) {
-      setPostError(`Facebook connection failed: ${fbError.replace(/_/g, ' ')}`)
+    const qError = params.get('error')
+    if (qError) {
+      const label = qError.includes('linkedin') ? 'LinkedIn' : 'Facebook'
+      setPostError(`${label} connection failed: ${qError.replace(/_/g, ' ')}`)
       window.history.replaceState({}, document.title, window.location.pathname)
     }
   }, [])
@@ -73,7 +78,8 @@ function MarketingDashboard() {
         setConnectionStatus(prev => ({
           ...prev,
           facebook: status.facebook || false,
-          instagram: status.instagram || false
+          instagram: status.instagram || false,
+          linkedin: status.linkedin || false,
         }))
       } catch (error) {
         console.error('Failed to fetch connection status:', error)
@@ -100,11 +106,88 @@ function MarketingDashboard() {
   }, [authLoading, isAuthenticated, userId])
 
   const handleConnectFacebook = () => {
-    // Pass the Supabase user_id in state so the callback can link accounts
     const url = userId
       ? getApiUrl(`/auth/facebook/login?user_id=${userId}`)
       : getApiUrl('/auth/facebook/login')
     window.location.href = url
+  }
+
+  const handleConnectLinkedin = () => {
+    const url = userId
+      ? getApiUrl(`/auth/linkedin/login?user_id=${userId}`)
+      : getApiUrl('/auth/linkedin/login')
+    window.location.href = url
+  }
+
+  const showLinkedinSuccessToast = (mode) => {
+    if (linkedinToastTimerRef.current) clearTimeout(linkedinToastTimerRef.current)
+    setLinkedinToast(mode === 'scheduled' ? 'scheduled' : 'published')
+    linkedinToastTimerRef.current = window.setTimeout(() => {
+      setLinkedinToast(null)
+      linkedinToastTimerRef.current = null
+    }, 5200)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (linkedinToastTimerRef.current) clearTimeout(linkedinToastTimerRef.current)
+    }
+  }, [])
+
+  /** Collect API errors from /social/post-dynamic results (Graph often returns 200 + error object). */
+  const collectPostResultErrors = (results, form) => {
+    const errs = []
+    if (!results || typeof results !== 'object') return errs
+
+    if (form.postToFacebook && results.facebook) {
+      const fb = results.facebook
+      if (fb.error) {
+        const msg =
+          typeof fb.error === 'object' && fb.error !== null
+            ? fb.error.message || JSON.stringify(fb.error)
+            : String(fb.error)
+        errs.push(`Facebook: ${msg}`)
+      }
+    }
+
+    if (form.postToInstagram && results.instagram) {
+      const ig = results.instagram
+      if (ig.error) {
+        const msg =
+          typeof ig.error === 'object' && ig.error !== null
+            ? ig.error.message || JSON.stringify(ig.error)
+            : String(ig.error)
+        errs.push(`Instagram: ${msg}`)
+      }
+    }
+
+    if (form.postToLinkedin) {
+      const li = results.linkedin
+      if (!li) {
+        errs.push('LinkedIn: empty response from server')
+      } else if (li.error) {
+        const detail = li.details ? ` ${typeof li.details === 'string' ? li.details : JSON.stringify(li.details)}` : ''
+        errs.push(`LinkedIn: ${li.error}${detail}`)
+      }
+    }
+
+    return errs
+  }
+
+  const buildSuccessCopy = (response, form) => {
+    const parts = []
+    const r = response?.results || {}
+    const when = form.postNow ? 'published' : 'scheduled'
+    if (form.postToFacebook && r.facebook && !r.facebook.error) parts.push('Facebook')
+    if (form.postToInstagram && r.instagram && !r.instagram.error) parts.push('Instagram')
+    if (form.postToLinkedin && r.linkedin && !r.linkedin.error) parts.push('LinkedIn')
+    const names = parts.join(', ')
+    const suffix = response?.scheduled_for && response.scheduled_for !== 'NOW'
+      ? ` · ${response.scheduled_for}`
+      : ''
+    return names
+      ? `Post ${when} on ${names}.${suffix}`
+      : `Post ${when} successfully!${suffix}`
   }
 
   const handlePostSubmit = async (e) => {
@@ -119,7 +202,7 @@ function MarketingDashboard() {
     }
 
     // Validation
-    if (!postForm.postToFacebook && !postForm.postToInstagram) {
+    if (!postForm.postToFacebook && !postForm.postToInstagram && !postForm.postToLinkedin) {
       setPostError('Please select at least one platform')
       return
     }
@@ -138,8 +221,13 @@ function MarketingDashboard() {
       setPostError('Please connect your Instagram account before posting')
       return
     }
+    if (postForm.postToLinkedin && !connectionStatus.linkedin) {
+      setPostError('Please connect your LinkedIn account before posting')
+      return
+    }
 
     setIsPosting(true)
+    const formSnapshot = { ...postForm }
 
     try {
       // Create FormData for multipart/form-data
@@ -147,6 +235,7 @@ function MarketingDashboard() {
       // user_id is now extracted from JWT token in backend, no need to send it
       formData.append('post_to_facebook', postForm.postToFacebook)
       formData.append('post_to_instagram', postForm.postToInstagram)
+      formData.append('post_to_linkedin', postForm.postToLinkedin)
       formData.append('post_now', postForm.postNow)
 
       if (postForm.message) {
@@ -167,19 +256,32 @@ function MarketingDashboard() {
       }
 
       const response = await postDynamic(formData)
-      
-      setPostSuccess(
-        `Post ${postForm.postNow ? 'published' : 'scheduled'} successfully! ${
-          response.scheduled_for ? `Scheduled for: ${response.scheduled_for}` : ''
-        }`
-      )
-      
-      // Reset form after successful submission
+      const resultErrors = collectPostResultErrors(response?.results, formSnapshot)
+
+      if (resultErrors.length > 0) {
+        setPostError(resultErrors.join(' '))
+        return
+      }
+
+      setPostSuccess(buildSuccessCopy(response, formSnapshot))
+
+      if (formSnapshot.postToLinkedin) {
+        const li = response?.results?.linkedin
+        if (li && !li.error && (li.scheduled === true || li.id != null || li.ok === true)) {
+          showLinkedinSuccessToast(li.scheduled === true ? 'scheduled' : 'published')
+        }
+      }
+
       handleResetForm()
-      
-      // Optionally refresh analytics
-      // You can add logic here to refresh the posts list
-      
+
+      if (formSnapshot.postToFacebook || formSnapshot.postToInstagram) {
+        try {
+          fetchFbAnalytics(true)
+          fetchInstaAnalytics(true)
+        } catch (_) {
+          /* ignore */
+        }
+      }
     } catch (error) {
       setPostError(error.message || 'Failed to post. Please try again.')
       console.error('Post error:', error)
@@ -192,6 +294,7 @@ function MarketingDashboard() {
     setPostForm({
       postToFacebook: false,
       postToInstagram: false,
+      postToLinkedin: false,
       message: '',
       image: null,
       postNow: true,
@@ -240,11 +343,11 @@ function MarketingDashboard() {
             </p>
           </header>
 
-          <div className="flex flex-row flex-wrap gap-2 sm:gap-3 w-full lg:w-auto lg:max-w-md lg:justify-end lg:shrink-0">
-            <div className="flex-1 min-w-[9.5rem] sm:flex-none sm:w-40 rounded-xl border border-gray-800/80 bg-opsly-card/90 p-3 flex flex-col">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full sm:w-[min(100%,22rem)] lg:w-[24rem] lg:shrink-0 lg:ml-auto">
+            <div className="min-w-0 rounded-xl border border-gray-800/80 bg-opsly-card/90 p-2.5 sm:p-3 flex flex-col">
               <div className="flex items-center gap-2 mb-2">
                 <FaFacebook className="text-xl text-blue-500 flex-shrink-0" />
-                <span className="text-sm font-medium text-white">Facebook</span>
+                <span className="text-xs sm:text-sm font-medium text-white truncate">Facebook</span>
               </div>
               <p className={`text-[11px] leading-tight mb-2.5 ${connectionStatus.facebook ? 'text-green-400' : 'text-gray-500'}`}>
                 {connectionStatus.facebook ? 'Connected' : 'Not connected'}
@@ -259,7 +362,7 @@ function MarketingDashboard() {
               </button>
             </div>
 
-            <div className="flex-1 min-w-[9.5rem] sm:flex-none sm:w-40 rounded-xl border border-gray-800/80 bg-opsly-card/90 p-3 flex flex-col">
+            <div className="min-w-0 rounded-xl border border-gray-800/80 bg-opsly-card/90 p-2.5 sm:p-3 flex flex-col">
               <div className="flex items-center gap-2 mb-2">
                 <FaInstagram
                   className="text-xl flex-shrink-0"
@@ -269,7 +372,7 @@ function MarketingDashboard() {
                     WebkitTextFillColor: 'transparent',
                   }}
                 />
-                <span className="text-sm font-medium text-white">Instagram</span>
+                <span className="text-xs sm:text-sm font-medium text-white truncate">Instagram</span>
               </div>
               <p className={`text-[11px] leading-tight mb-2.5 ${connectionStatus.instagram ? 'text-green-400' : 'text-gray-500'}`}>
                 {connectionStatus.instagram ? 'Connected' : 'Via Facebook'}
@@ -280,6 +383,24 @@ function MarketingDashboard() {
                 className="mt-auto w-full py-1.5 text-xs font-medium bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {connectionStatus.instagram ? 'Connected' : 'Connect'}
+              </button>
+            </div>
+
+            <div className="min-w-0 rounded-xl border border-gray-800/80 bg-opsly-card/90 p-2.5 sm:p-3 flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <FaLinkedin className="text-xl text-[#0A66C2] flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium text-white truncate">LinkedIn</span>
+              </div>
+              <p className={`text-[11px] leading-tight mb-2.5 ${connectionStatus.linkedin ? 'text-green-400' : 'text-gray-500'}`}>
+                {connectionStatus.linkedin ? 'Member connected' : 'Not connected'}
+              </p>
+              <button
+                type="button"
+                onClick={handleConnectLinkedin}
+                disabled={connectionStatus.linkedin}
+                className="mt-auto w-full py-1.5 text-xs font-medium bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {connectionStatus.linkedin ? 'Connected' : 'Connect'}
               </button>
             </div>
           </div>
@@ -384,6 +505,18 @@ function MarketingDashboard() {
                       <FaInstagram className={`text-lg ${postForm.postToInstagram ? 'text-pink-400' : 'text-gray-500'}`} />
                       Instagram
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setPostForm({ ...postForm, postToLinkedin: !postForm.postToLinkedin })}
+                      className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
+                        postForm.postToLinkedin
+                          ? 'border-[#0A66C2]/60 bg-[#0A66C2]/15 text-white'
+                          : 'border-gray-700 bg-opsly-dark text-gray-400 hover:border-gray-600'
+                      }`}
+                    >
+                      <FaLinkedin className={`text-lg ${postForm.postToLinkedin ? 'text-[#0A66C2]' : 'text-gray-500'}`} />
+                      LinkedIn
+                    </button>
                   </div>
                 </div>
 
@@ -476,7 +609,10 @@ function MarketingDashboard() {
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-1">
                   <button
                     type="submit"
-                    disabled={isPosting || (!postForm.postToFacebook && !postForm.postToInstagram)}
+                    disabled={
+                      isPosting ||
+                      (!postForm.postToFacebook && !postForm.postToInstagram && !postForm.postToLinkedin)
+                    }
                     className="flex-1 px-4 py-2.5 text-sm font-medium bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
                   >
                     {isPosting ? (
@@ -680,6 +816,28 @@ function MarketingDashboard() {
           </div>
         </div>
       </div>
+
+      {linkedinToast && (
+        <div
+          className="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 flex items-center gap-3 pl-3 pr-4 py-3 rounded-xl border border-[#0A66C2]/45 bg-[#12121c]/95 shadow-xl shadow-black/50 max-w-[min(100vw-2rem,22rem)] pointer-events-none"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#0A66C2]/20">
+            <FaLinkedin className="text-2xl text-[#0A66C2]" aria-hidden />
+          </div>
+          <div className="min-w-0 text-left">
+            <p className="text-sm font-semibold text-white">
+              {linkedinToast === 'scheduled' ? 'LinkedIn post scheduled' : 'Posted to LinkedIn'}
+            </p>
+            <p className="text-xs text-gray-400 leading-snug">
+              {linkedinToast === 'scheduled'
+                ? 'We’ll publish it at the time you chose (server must stay running).'
+                : 'Your update is on your profile.'}
+            </p>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 }

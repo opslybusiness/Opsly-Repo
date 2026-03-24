@@ -1,3 +1,6 @@
+from contextlib import asynccontextmanager
+from urllib.parse import urlencode
+
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import RedirectResponse
 import httpx
@@ -7,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app.auth import get_user_id_from_token
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import requests
 from app.routes.facebook_analytics import router as analytics_router
 from app.routes.insta_analytics import router as insta_analytics_router
@@ -21,7 +24,17 @@ from uuid import UUID as UUIDType
 
 load_dotenv()
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from app.scheduler_app import start_scheduler, shutdown_scheduler
+
+    start_scheduler()
+    yield
+    shutdown_scheduler()
+
+
+app = FastAPI(lifespan=lifespan)
 
 origins = [
     "https://marketing-minds-three.vercel.app",
@@ -50,6 +63,14 @@ FB_APP_ID    = os.getenv("FB_APP_ID")
 FB_APP_SECRET = os.getenv("FB_APP_SECRET")
 REDIRECT_URI  = os.getenv("REDIRECT_URI", "http://localhost:8000/auth/facebook/callback").strip().strip('"')
 FRONTEND_URL  = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
+LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
+LINKEDIN_REDIRECT_URI = os.getenv(
+    "LINKEDIN_REDIRECT_URI", "http://localhost:8000/auth/linkedin/callback"
+).strip().strip('"')
+LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
+_LINKEDIN_SCOPES = "openid profile email w_member_social"
 
 # Scopes required for reading pages, analytics AND publishing posts
 _FB_SCOPES = (
@@ -163,14 +184,96 @@ async def facebook_callback(request: Request, db: Session = Depends(get_db)):
 
     return RedirectResponse(f"{FRONTEND_URL}/marketing?connected=true")
 
+
+@app.get("/auth/linkedin/login")
+def linkedin_login(user_id: str = None):
+    """Start LinkedIn OAuth (OpenID + w_member_social). Pass Supabase user_id as query param."""
+    state = user_id or "anonymous"
+    q = urlencode(
+        {
+            "response_type": "code",
+            "client_id": LINKEDIN_CLIENT_ID,
+            "redirect_uri": LINKEDIN_REDIRECT_URI,
+            "state": state,
+            "scope": _LINKEDIN_SCOPES,
+        }
+    )
+    return RedirectResponse(f"https://www.linkedin.com/oauth/v2/authorization?{q}")
+
+
+@app.get("/auth/linkedin/callback")
+def linkedin_callback(request: Request, db: Session = Depends(get_db)):
+    code = request.query_params.get("code")
+    state = request.query_params.get("state", "")
+
+    if not code:
+        return RedirectResponse(f"{FRONTEND_URL}/marketing?error=linkedin_denied")
+
+    token_r = requests.post(
+        LINKEDIN_TOKEN_URL,
+        data={
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": LINKEDIN_REDIRECT_URI,
+            "client_id": LINKEDIN_CLIENT_ID,
+            "client_secret": LINKEDIN_CLIENT_SECRET,
+        },
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        timeout=60,
+    )
+    tok = token_r.json()
+    if "access_token" not in tok:
+        return RedirectResponse(f"{FRONTEND_URL}/marketing?error=linkedin_token_failed")
+
+    access = tok["access_token"]
+    refresh = tok.get("refresh_token")
+    expires_in = tok.get("expires_in")
+
+    from app.linkedin_post import fetch_person_id
+
+    person_id = fetch_person_id(access)
+
+    user_by_uid = None
+    if state and state != "anonymous":
+        try:
+            user_uuid = UUIDType(state)
+            user_by_uid = db.query(User).filter(User.user_id == user_uuid).first()
+        except ValueError:
+            pass
+
+    exp_at = None
+    if expires_in:
+        exp_at = datetime.now(timezone.utc) + timedelta(seconds=int(expires_in))
+
+    if user_by_uid:
+        user_by_uid.linkedin_access_token = access
+        if refresh:
+            user_by_uid.linkedin_refresh_token = refresh
+        user_by_uid.linkedin_token_expires_at = exp_at
+        if person_id:
+            user_by_uid.linkedin_person_id = person_id
+    else:
+        db.add(
+            User(
+                linkedin_access_token=access,
+                linkedin_refresh_token=refresh,
+                linkedin_token_expires_at=exp_at,
+                linkedin_person_id=person_id,
+            )
+        )
+
+    db.commit()
+    return RedirectResponse(f"{FRONTEND_URL}/marketing?connected=linkedin")
+
+
 @app.get("/user/connection-status")
 def get_connection_status(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_user_id_from_token)
 ):
     """
-    Check if user has a session_token (Facebook/Instagram connection).
-    Returns connection status for both platforms and user name.
+    Facebook/Instagram: session_token (Meta). LinkedIn: linkedin_access_token.
+    Returns per-platform flags and display name.
     """
     try:
         user_uuid = UUIDType(user_id)
@@ -183,16 +286,18 @@ def get_connection_status(
         return {
             "facebook": False,
             "instagram": False,
-            "name": None
+            "linkedin": False,
+            "name": None,
         }
-    
-    # If user has session_token, both Facebook and Instagram are considered connected
+
     has_session_token = bool(user.session_token)
-    
+    has_linkedin = bool(user.linkedin_access_token)
+
     return {
         "facebook": has_session_token,
         "instagram": has_session_token,
-        "name": user.name
+        "linkedin": has_linkedin,
+        "name": user.name,
     }
 
 
