@@ -21,6 +21,11 @@ export const AuthProvider = ({ children }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
+      if (session?.access_token) {
+        localStorage.setItem('token', session.access_token)
+      } else {
+        localStorage.removeItem('token')
+      }
       setLoading(false)
     })
 

@@ -199,8 +199,18 @@ function MarketingDashboard() {
   return (
     <DashboardLayout>
       <div className="min-w-0 max-w-full">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2">Marketing</h1>
-        <p className="text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Connect Your Accounts</p>
+        <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2">Marketing</h1>
+            <p className="text-sm sm:text-base text-gray-400">Connect Your Accounts</p>
+          </div>
+          <Link
+            to="/campaign-ops"
+            className="inline-flex items-center justify-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-black hover:bg-amber-400"
+          >
+            Open Campaign Ops
+          </Link>
+        </div>
 
         {/* Connect Your Accounts Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">

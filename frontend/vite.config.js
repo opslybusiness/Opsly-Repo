@@ -6,9 +6,14 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',  // Local FastAPI backend - change this if your backend runs on a different port
+        target: 'http://127.0.0.1:8000',  // Core FastAPI backend
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/campaign-api': {
+        target: 'http://127.0.0.1:8001',  // Campaign service backend
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/campaign-api/, ''),
       },
       '/chatbot-api': {
         target: 'https://chatbot-be-three.vercel.app',

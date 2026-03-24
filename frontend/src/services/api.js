@@ -43,7 +43,12 @@ export const apiClient = async (endpoint, options = {}) => {
         statusText: response.statusText,
         data
       })
-      throw new Error(data.message || data || `HTTP error! status: ${response.status}`)
+      const errorMessage =
+        (typeof data === 'object' && data !== null && (data.detail || data.message)) ||
+        (typeof data === 'string' ? data : '') ||
+        `HTTP error! status: ${response.status}`
+
+      throw new Error(errorMessage)
     }
     
     return data
