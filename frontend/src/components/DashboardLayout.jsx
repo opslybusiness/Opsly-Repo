@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { HiPhone, HiChartBar, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX, HiPaperClip, HiMicrophone } from 'react-icons/hi'
+import { HiPhone, HiPlay, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX, HiPaperClip, HiMicrophone } from 'react-icons/hi'
 import { FaSearch, FaBell, FaCoins } from 'react-icons/fa'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
@@ -94,8 +94,8 @@ function DashboardLayout({ children, userName }) {
               className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/marketing') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
               onClick={() => setShowMobileMenu(false)}
             >
-              <HiChartBar className="text-xl text-white" />
-              <span className="text-white">Marketing</span>
+              <HiPlay className="text-xl text-white flex-shrink-0" />
+              <span className="text-white text-left leading-snug">Social media automation</span>
             </Link>
             <Link 
               to="/finance" 
@@ -179,8 +179,12 @@ function DashboardLayout({ children, userName }) {
         <Link to="/customer-support" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/customer-support') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
           <HiPhone className="text-xl text-white" />
         </Link>
-        <Link to="/marketing" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/marketing') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-          <HiChartBar className="text-xl text-white" />
+        <Link
+          to="/marketing"
+          title="Social media automation"
+          className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/marketing') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+        >
+          <HiPlay className="text-xl text-white" />
         </Link>
         <Link to="/finance" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/finance') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
           <FaCoins className="text-xl text-white" />

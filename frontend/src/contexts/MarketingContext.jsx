@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback } from 'react'
 import { getFacebookAnalytics, getInstagramAnalytics } from '../services/marketingService'
 
-const MarketingContext = createContext({})
+const MarketingContext = createContext(null)
 
 export const useMarketing = () => {
   const context = useContext(MarketingContext)

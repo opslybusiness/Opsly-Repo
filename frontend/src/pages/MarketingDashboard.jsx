@@ -1,8 +1,7 @@
 import DashboardLayout from '../components/DashboardLayout'
 import { FaFacebook, FaInstagram } from 'react-icons/fa'
-import { HiCalendar } from 'react-icons/hi'
-import { Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { HiCalendar, HiPhotograph } from 'react-icons/hi'
+import { useEffect, useState, useRef } from 'react'
 import { getApiUrl } from '../config/api'
 import { postDynamic, getConnectionStatus } from '../services/marketingService'
 import { useAuth } from '../contexts/AuthContext'
@@ -10,26 +9,7 @@ import { useMarketing } from '../contexts/MarketingContext'
 
 function MarketingDashboard() {
   const { userId, isAuthenticated, loading: authLoading } = useAuth()
-  
-  // Try to get marketing context, but handle errors gracefully
-  let marketingContext
-  try {
-    marketingContext = useMarketing()
-  } catch (error) {
-    console.error('Marketing context error:', error)
-    marketingContext = {
-      fbPosts: [],
-      instaPosts: [],
-      isFbLoading: false,
-      isInstaLoading: false,
-      fbError: null,
-      instaError: null,
-      fetchFbAnalytics: () => Promise.resolve({ analytics: [] }),
-      fetchInstaAnalytics: () => Promise.resolve({ analytics: [] })
-    }
-  }
-
-  const { 
+  const {
     fbPosts, 
     instaPosts, 
     isFbLoading, 
@@ -38,9 +18,8 @@ function MarketingDashboard() {
     instaError, 
     fetchFbAnalytics, 
     fetchInstaAnalytics 
-  } = marketingContext
-  
-  const [selectedPlatform, setSelectedPlatform] = useState('facebook')
+  } = useMarketing()
+
   const [connectionStatus, setConnectionStatus] = useState({
     facebook: false,
     linkedin: false,
@@ -60,6 +39,18 @@ function MarketingDashboard() {
   const [isPosting, setIsPosting] = useState(false)
   const [postError, setPostError] = useState(null)
   const [postSuccess, setPostSuccess] = useState(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
+  const imageInputRef = useRef(null)
+
+  useEffect(() => {
+    if (!postForm.image) {
+      setImagePreviewUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(postForm.image)
+    setImagePreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [postForm.image])
 
   // After Facebook OAuth callback, URL will contain ?connected=true or ?error=...
   useEffect(() => {
@@ -138,6 +129,16 @@ function MarketingDashboard() {
       return
     }
 
+    // Platform connection validation
+    if (postForm.postToFacebook && !connectionStatus.facebook) {
+      setPostError('Please connect your Facebook account before posting')
+      return
+    }
+    if (postForm.postToInstagram && !connectionStatus.instagram) {
+      setPostError('Please connect your Instagram account before posting')
+      return
+    }
+
     setIsPosting(true)
 
     try {
@@ -197,8 +198,19 @@ function MarketingDashboard() {
       scheduleMinutes: null,
       scheduledDatetime: '',
     })
+    if (imageInputRef.current) imageInputRef.current.value = ''
     setPostError(null)
     setPostSuccess(null)
+  }
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0]
+    setPostForm((prev) => ({ ...prev, image: file || null }))
+  }
+
+  const handleRemoveImage = () => {
+    setPostForm((prev) => ({ ...prev, image: null }))
+    if (imageInputRef.current) imageInputRef.current.value = ''
   }
 
   // Show loading if auth is still loading
@@ -217,423 +229,453 @@ function MarketingDashboard() {
   return (
     <DashboardLayout>
       <div className="min-w-0 max-w-full">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2">Marketing</h1>
-        <p className="text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Connect Your Accounts</p>
-
-        {/* Connect Your Accounts Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
-          {/* Facebook Card */}
-          <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
-            <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-              <FaFacebook className="text-3xl sm:text-4xl text-blue-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <h3 className="text-lg sm:text-xl font-semibold text-white">Facebook</h3>
-                <p className={`text-xs sm:text-sm ${connectionStatus.facebook ? 'text-green-400' : 'text-gray-400'}`}>
-                  {connectionStatus.facebook ? 'Connected' : 'Not Connected'}
-                </p>
-              </div>
-            </div>
-            <p className="text-xs sm:text-sm text-gray-300 mb-3 sm:mb-4">Connect your account to start posting</p>
-            <button 
-              onClick={handleConnectFacebook}
-              disabled={connectionStatus.facebook}
-              className="w-full py-2 text-sm sm:text-base bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {connectionStatus.facebook ? 'Connected' : 'Connect Account'}
-            </button>
-          </div>
-
-          {/* LinkedIn Card */}
-          {/* <div className="bg-opsly-card rounded-lg p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <FaLinkedin className="text-4xl text-blue-600" />
-              <div>
-                <h3 className="text-xl font-semibold text-white">LinkedIn</h3>
-                <p className="text-sm text-gray-400">Not Connected</p>
-              </div>
-            </div>
-            <p className="text-gray-300 mb-4 text-sm">Connect your account to start posting</p>
-            <button className="w-full py-2 bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition">
-              Connect Account
-            </button>
-          </div> */}
-
-          {/* Instagram Card */}
-          <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
-            <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-              <FaInstagram className="text-3xl sm:text-4xl flex-shrink-0" style={{ background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }} />
-              <div className="min-w-0">
-                <h3 className="text-lg sm:text-xl font-semibold text-white">Instagram</h3>
-                <p className={`text-xs sm:text-sm ${connectionStatus.instagram ? 'text-green-400' : 'text-gray-400'}`}>
-                  {connectionStatus.instagram ? 'Connected' : 'Not Connected'}
-                </p>
-              </div>
-            </div>
-            <p className="text-xs sm:text-sm text-gray-300 mb-3 sm:mb-4">
-              {connectionStatus.instagram ? 'Your account is connected and ready to post' : 'Connect your account to start posting'}
+        {/* Hero: title + compact connect cards (top-right on large screens) */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-6 sm:mb-8">
+          <header className="min-w-0 flex-1">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 tracking-tight">
+              Social media automation
+            </h1>
+            <p className="text-sm text-gray-400 max-w-xl">
+              Publish and schedule content to your connected channels.
             </p>
-            <button 
-              disabled={connectionStatus.instagram}
-              className="w-full py-2 text-sm sm:text-base bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {connectionStatus.instagram ? 'Connected' : 'Connect Account'}
-            </button>
+          </header>
+
+          <div className="flex flex-row flex-wrap gap-2 sm:gap-3 w-full lg:w-auto lg:max-w-md lg:justify-end lg:shrink-0">
+            <div className="flex-1 min-w-[9.5rem] sm:flex-none sm:w-40 rounded-xl border border-gray-800/80 bg-opsly-card/90 p-3 flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <FaFacebook className="text-xl text-blue-500 flex-shrink-0" />
+                <span className="text-sm font-medium text-white">Facebook</span>
+              </div>
+              <p className={`text-[11px] leading-tight mb-2.5 ${connectionStatus.facebook ? 'text-green-400' : 'text-gray-500'}`}>
+                {connectionStatus.facebook ? 'Connected' : 'Not connected'}
+              </p>
+              <button
+                type="button"
+                onClick={handleConnectFacebook}
+                disabled={connectionStatus.facebook}
+                className="mt-auto w-full py-1.5 text-xs font-medium bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {connectionStatus.facebook ? 'Connected' : 'Connect'}
+              </button>
+            </div>
+
+            <div className="flex-1 min-w-[9.5rem] sm:flex-none sm:w-40 rounded-xl border border-gray-800/80 bg-opsly-card/90 p-3 flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <FaInstagram
+                  className="text-xl flex-shrink-0"
+                  style={{
+                    background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                />
+                <span className="text-sm font-medium text-white">Instagram</span>
+              </div>
+              <p className={`text-[11px] leading-tight mb-2.5 ${connectionStatus.instagram ? 'text-green-400' : 'text-gray-500'}`}>
+                {connectionStatus.instagram ? 'Connected' : 'Via Facebook'}
+              </p>
+              <button
+                type="button"
+                disabled={connectionStatus.instagram}
+                className="mt-auto w-full py-1.5 text-xs font-medium bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {connectionStatus.instagram ? 'Connected' : 'Connect'}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Create New Post Section */}
-        <div className="bg-opsly-card rounded-lg p-4 sm:p-6 mb-8 sm:mb-12">
-          <h2 className="text-xl sm:text-2xl font-semibold text-white mb-1 sm:mb-2">Create New Post</h2>
-          <p className="text-sm sm:text-base text-gray-400 mb-4 sm:mb-6">Select platforms and schedule your post</p>
-          
+        {/* Create New Post — image left, options right */}
+        <div className="bg-opsly-card rounded-xl border border-gray-800/60 p-4 sm:p-6 mb-8 sm:mb-12">
+          <div className="mb-4 sm:mb-5">
+            <h2 className="text-lg sm:text-xl font-semibold text-white">Create new post</h2>
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Add media, caption, timing, and destinations</p>
+          </div>
+
           {postError && (
-            <div className="mb-4 p-3 text-sm sm:text-base bg-red-500/20 border border-red-500 rounded-lg text-red-300">
-              {postError}
-            </div>
+            <div className="mb-4 p-3 text-sm bg-red-500/15 border border-red-500/40 rounded-xl text-red-200">{postError}</div>
           )}
-          
           {postSuccess && (
-            <div className="mb-4 p-3 text-sm sm:text-base bg-green-500/20 border border-green-500 rounded-lg text-green-300">
-              {postSuccess}
-            </div>
+            <div className="mb-4 p-3 text-sm bg-green-500/15 border border-green-500/40 rounded-xl text-green-200">{postSuccess}</div>
           )}
 
-          <form onSubmit={handlePostSubmit} className="space-y-4 sm:space-y-6 min-w-0">
-            {/* Platform Selection */}
-            <div>
-              <label className="block text-sm sm:text-base text-white mb-2 sm:mb-3">Select Platforms</label>
-              <div className="flex flex-wrap gap-3 sm:gap-4">
-                <button
-                  type="button"
-                  onClick={() => setPostForm({ ...postForm, postToFacebook: !postForm.postToFacebook })}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
-                    postForm.postToFacebook 
-                      ? 'border-blue-500 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
-                      : 'border-gray-700 bg-opsly-dark hover:border-gray-500'
+          <form onSubmit={handlePostSubmit} className="min-w-0">
+            <div className="grid gap-6 md:grid-cols-2 md:gap-8">
+              {/* Left: image upload + preview */}
+              <div className="min-w-0 flex flex-col">
+                <span className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Media</span>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="sr-only"
+                  id="post-image-input"
+                />
+                <label
+                  htmlFor="post-image-input"
+                  className={`group relative flex flex-col flex-1 min-h-[14rem] sm:min-h-[17rem] rounded-xl border-2 border-dashed cursor-pointer overflow-hidden transition-colors ${
+                    imagePreviewUrl
+                      ? 'border-gray-700 bg-opsly-dark'
+                      : 'border-gray-700 bg-opsly-dark/50 hover:border-opsly-purple/50 hover:bg-opsly-dark'
                   }`}
                 >
-                  <FaFacebook className={`text-2xl flex-shrink-0 ${postForm.postToFacebook ? 'text-blue-500' : 'text-gray-500'}`} />
-                  <span className={`text-sm sm:text-base font-medium ${postForm.postToFacebook ? 'text-white' : 'text-gray-400'}`}>Facebook</span>
-                  {postForm.postToFacebook && (
-                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center ml-auto">
-                      <span className="text-white text-xs">✓</span>
+                  {imagePreviewUrl ? (
+                    <>
+                      <img
+                        src={imagePreviewUrl}
+                        alt="Preview"
+                        className="absolute inset-0 w-full h-full object-contain bg-black/40"
+                      />
+                      <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-white/90 truncate px-1">{postForm.image?.name}</span>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <span className="text-[11px] text-opsly-purple font-medium px-2 py-1 rounded-md bg-black/50">
+                            Change
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center flex-1 p-6 text-center">
+                      <HiPhotograph className="text-4xl text-gray-600 group-hover:text-opsly-purple/80 transition-colors mb-3" />
+                      <p className="text-sm text-gray-300 font-medium">Drop or click to upload</p>
+                      <p className="text-xs text-gray-500 mt-1">PNG, JPG — optional</p>
                     </div>
                   )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPostForm({ ...postForm, postToInstagram: !postForm.postToInstagram })}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
-                    postForm.postToInstagram 
-                      ? 'border-pink-500 bg-pink-500/20 shadow-lg shadow-pink-500/20' 
-                      : 'border-gray-700 bg-opsly-dark hover:border-gray-500'
-                  }`}
-                >
-                  <FaInstagram className={`text-2xl flex-shrink-0 ${postForm.postToInstagram ? 'text-pink-500' : 'text-gray-500'}`} />
-                  <span className={`text-sm sm:text-base font-medium ${postForm.postToInstagram ? 'text-white' : 'text-gray-400'}`}>Instagram</span>
-                  {postForm.postToInstagram && (
-                    <div className="w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center ml-auto">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Message */}
-            <div>
-              <label className="block text-sm sm:text-base text-white mb-2">Message (Optional)</label>
-              <textarea
-                value={postForm.message}
-                onChange={(e) => setPostForm({ ...postForm, message: e.target.value })}
-                placeholder="What's on your mind?"
-                className="w-full max-w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple resize-none min-w-0"
-                rows="4"
-              />
-            </div>
-
-            {/* Image Upload */}
-            <div>
-              <label className="block text-sm sm:text-base text-white mb-2">Image (Optional)</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setPostForm({ ...postForm, image: e.target.files[0] })}
-                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-lg file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-opsly-purple file:text-white hover:file:bg-opacity-90"
-              />
-              {postForm.image && (
-                <p className="mt-2 text-xs sm:text-sm text-gray-400 truncate">Selected: {postForm.image.name}</p>
-              )}
-            </div>
-
-            {/* Post Now vs Schedule */}
-            <div>
-              <label className="block text-sm sm:text-base text-white mb-2 sm:mb-3">Post Timing</label>
-              <div className="flex gap-3 sm:gap-4 mb-3 sm:mb-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="postTiming"
-                    checked={postForm.postNow}
-                    onChange={() => setPostForm({ ...postForm, postNow: true, scheduleMinutes: null, scheduledDatetime: '' })}
-                    className="w-4 h-4 flex-shrink-0"
-                  />
-                  <span className="text-sm sm:text-base text-gray-300">Post Now</span>
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="postTiming"
-                    checked={!postForm.postNow}
-                    onChange={() => setPostForm({ ...postForm, postNow: false })}
-                    className="w-4 h-4 flex-shrink-0"
-                  />
-                  <span className="text-sm sm:text-base text-gray-300">Schedule</span>
-                </label>
+                {imagePreviewUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="mt-2 text-xs text-gray-500 hover:text-red-400 transition-colors self-start"
+                  >
+                    Remove image
+                  </button>
+                )}
               </div>
 
-              {!postForm.postNow && (
-                <div className="space-y-3 sm:space-y-4">
-                  <div>
-                    <label className="block text-xs sm:text-sm text-gray-300 mb-2">Schedule in minutes (Optional)</label>
-                    <input
-                      type="number"
-                      value={postForm.scheduleMinutes || ''}
-                      onChange={(e) => setPostForm({ ...postForm, scheduleMinutes: e.target.value ? parseInt(e.target.value) : null, scheduledDatetime: '' })}
-                      placeholder="e.g., 30"
-                      min="1"
-                      className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
-                    />
-                  </div>
-                  <div className="text-xs sm:text-sm text-gray-400 text-center">OR</div>
-                  <div>
-                    <label className="block text-xs sm:text-sm text-gray-300 mb-2">Schedule at specific date & time</label>
-                    <input
-                      type="datetime-local"
-                      value={postForm.scheduledDatetime ? postForm.scheduledDatetime.slice(0, 16) : ''}
-                      onChange={(e) => {
-                        const dt = e.target.value
-                        // Convert datetime-local format (YYYY-MM-DDTHH:mm) to backend format (YYYY-MM-DDTHH:MM:SS)
-                        const formatted = dt ? `${dt}:00` : ''
-                        setPostForm({ ...postForm, scheduledDatetime: formatted, scheduleMinutes: null })
-                      }}
-                      className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base bg-opsly-dark text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opsly-purple"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">Format: YYYY-MM-DDTHH:MM:SS</p>
+              {/* Right: platforms, caption, timing */}
+              <div className="min-w-0 flex flex-col gap-5">
+                <div>
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2 block">Platforms</span>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPostForm({ ...postForm, postToFacebook: !postForm.postToFacebook })}
+                      className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
+                        postForm.postToFacebook
+                          ? 'border-blue-500/60 bg-blue-500/15 text-white'
+                          : 'border-gray-700 bg-opsly-dark text-gray-400 hover:border-gray-600'
+                      }`}
+                    >
+                      <FaFacebook className={`text-lg ${postForm.postToFacebook ? 'text-blue-400' : 'text-gray-500'}`} />
+                      Facebook
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPostForm({ ...postForm, postToInstagram: !postForm.postToInstagram })}
+                      className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
+                        postForm.postToInstagram
+                          ? 'border-pink-500/60 bg-pink-500/15 text-white'
+                          : 'border-gray-700 bg-opsly-dark text-gray-400 hover:border-gray-600'
+                      }`}
+                    >
+                      <FaInstagram className={`text-lg ${postForm.postToInstagram ? 'text-pink-400' : 'text-gray-500'}`} />
+                      Instagram
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Submit Button */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <button
-                type="submit"
-                disabled={isPosting || (!postForm.postToFacebook && !postForm.postToInstagram)}
-                className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isPosting ? (
-                  <>
-                    <span className="animate-spin">⏳</span>
-                    Posting...
-                  </>
-                ) : postForm.postNow ? (
-                  'Post Now'
-                ) : (
-                  <>
-                    <HiCalendar className="text-lg sm:text-xl flex-shrink-0" />
-                    Schedule Post
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={handleResetForm}
-                className="flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-opsly-dark text-gray-300 rounded-lg hover:bg-opacity-90 transition border border-gray-700"
-              >
-                Reset
-              </button>
+                <div>
+                  <label htmlFor="post-caption" className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2 block">
+                    Caption
+                  </label>
+                  <textarea
+                    id="post-caption"
+                    value={postForm.message}
+                    onChange={(e) => setPostForm({ ...postForm, message: e.target.value })}
+                    placeholder="Write a caption…"
+                    rows={5}
+                    className="w-full px-3 py-2.5 text-sm bg-opsly-dark text-white rounded-lg border border-gray-800 focus:outline-none focus:ring-2 focus:ring-opsly-purple/60 focus:border-transparent resize-none min-h-[7.5rem]"
+                  />
+                </div>
+
+                <div>
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2 block">When to post</span>
+                  <div className="flex p-1 rounded-xl bg-opsly-dark border border-gray-800 w-full max-w-md">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPostForm({
+                          ...postForm,
+                          postNow: true,
+                          scheduleMinutes: null,
+                          scheduledDatetime: '',
+                        })
+                      }
+                      className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+                        postForm.postNow ? 'bg-opsly-purple text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      Post now
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPostForm({ ...postForm, postNow: false })}
+                      className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                        !postForm.postNow ? 'bg-opsly-purple text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      <HiCalendar className="text-base opacity-90" />
+                      Schedule
+                    </button>
+                  </div>
+
+                  {!postForm.postNow && (
+                    <div className="mt-3 space-y-3 p-3 rounded-xl bg-opsly-dark/80 border border-gray-800/80">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1.5">In minutes</label>
+                        <input
+                          type="number"
+                          min={1}
+                          placeholder="e.g. 30"
+                          value={postForm.scheduleMinutes || ''}
+                          onChange={(e) =>
+                            setPostForm({
+                              ...postForm,
+                              scheduleMinutes: e.target.value ? parseInt(e.target.value, 10) : null,
+                              scheduledDatetime: '',
+                            })
+                          }
+                          className="w-full px-3 py-2 text-sm bg-opsly-dark border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-opsly-purple/50"
+                        />
+                      </div>
+                      <p className="text-[11px] text-center text-gray-600">or pick a date & time</p>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1.5">Date & time</label>
+                        <input
+                          type="datetime-local"
+                          value={postForm.scheduledDatetime ? postForm.scheduledDatetime.slice(0, 16) : ''}
+                          onChange={(e) => {
+                            const dt = e.target.value
+                            const formatted = dt ? `${dt}:00` : ''
+                            setPostForm({
+                              ...postForm,
+                              scheduledDatetime: formatted,
+                              scheduleMinutes: null,
+                            })
+                          }}
+                          className="w-full px-3 py-2 text-sm bg-opsly-dark border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-opsly-purple/50"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-1">
+                  <button
+                    type="submit"
+                    disabled={isPosting || (!postForm.postToFacebook && !postForm.postToInstagram)}
+                    className="flex-1 px-4 py-2.5 text-sm font-medium bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                  >
+                    {isPosting ? (
+                      <>
+                        <span className="inline-block animate-pulse">⏳</span>
+                        Publishing…
+                      </>
+                    ) : postForm.postNow ? (
+                      'Publish now'
+                    ) : (
+                      <>
+                        <HiCalendar className="text-lg" />
+                        Schedule post
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetForm}
+                    className="px-4 py-2.5 text-sm font-medium bg-transparent text-gray-400 rounded-lg border border-gray-700 hover:bg-opsly-dark hover:text-gray-200 transition"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
             </div>
           </form>
         </div>
 
-        {/* Your Posts Section */}
-        <div>
-          <h2 className="text-xl sm:text-2xl font-semibold text-white mb-4 sm:mb-6">Your Posts</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            {/* Post 1 - Published */}
-            <Link to="/marketing/post-analytics" className="bg-opsly-card rounded-lg overflow-hidden hover:opacity-90 transition cursor-pointer">
-              <div className="relative">
-                <img src="/Published.png" alt="Published Post" className="w-full h-48 object-cover" />
-                <span className="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded text-sm font-semibold">
-                  Published
-                </span>
-              </div>
-              <div className="p-4">
-                <div className="flex gap-2">
-                  <FaFacebook className="text-blue-500" />
-                  <FaInstagram className="text-pink-500" />
-                </div>
-              </div>
-            </Link>
-
-            {/* Post 2 - Scheduled */}
-            <Link to="/marketing/post-analytics" className="bg-opsly-card rounded-lg overflow-hidden hover:opacity-90 transition cursor-pointer">
-              <div className="relative">
-                <img src="/Scheduled.png" alt="Scheduled Post" className="w-full h-48 object-cover" />
-                <span className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded text-sm font-semibold">
-                  Scheduled
-                </span>
-              </div>
-              <div className="p-4">
-                <div className="flex gap-2">
-                  <FaFacebook className="text-blue-500" />
-                  <FaInstagram className="text-pink-500" />
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
-
-        {/* Facebook Analytics Section */}
+        {/* Facebook Posts — compact list */}
         <div className="mt-8 sm:mt-12">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4">
-            <h2 className="text-xl sm:text-2xl font-semibold text-white">Facebook Posts</h2>
-            <p className="text-xs sm:text-sm text-gray-400">
-              {fbPosts.length} posts fetched from{' '}
-              <span className="text-white font-medium">{connectionStatus.facebook ? 'connected' : 'your'}</span> page
-            </p>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-3 sm:mb-4 pb-3 border-b border-gray-800/80">
+            <div>
+              <h2 className="text-lg sm:text-xl font-semibold text-white tracking-tight">Facebook Posts</h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {connectionStatus.facebook ? 'Connected page' : 'Connect Facebook to sync'} · {fbPosts.length} {fbPosts.length === 1 ? 'post' : 'posts'}
+              </p>
+            </div>
           </div>
 
-          <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
+          <div className="rounded-xl border border-gray-800/60 bg-opsly-card/80 p-3 sm:p-4">
             {isFbLoading && (
-              <p className="text-gray-400">Loading Facebook analytics...</p>
+              <p className="text-sm text-gray-400 py-4 text-center">Loading Facebook posts…</p>
             )}
             {fbError && (
-              <p className="text-red-400">Failed to load posts: {fbError}</p>
+              <p className="text-sm text-red-400 py-2">Failed to load posts: {fbError}</p>
             )}
             {!isFbLoading && !fbError && fbPosts.length === 0 && (
-              <p className="text-gray-400">No Facebook posts found.</p>
+              <p className="text-sm text-gray-400 py-4 text-center">No Facebook posts found.</p>
             )}
 
             {!isFbLoading && !fbError && fbPosts.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <ul className="space-y-2 sm:space-y-2.5 max-h-[min(22rem,42vh)] sm:max-h-[26rem] overflow-y-auto overflow-x-hidden pr-1 -mr-1">
                 {fbPosts.map((post) => (
-                  <a
-                    key={post.post_id}
-                    href={post.post_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="border border-gray-800 rounded-lg overflow-hidden bg-opsly-dark hover:border-opsly-purple transition"
-                  >
-                    {post.image_url && (
-                      <div className="h-48 bg-opsly-card">
-                        <img
-                          src={post.image_url}
-                          alt={post.message || 'Facebook post'}
-                          className="w-full h-full object-cover"
-                        />
+                  <li key={post.post_id}>
+                    <a
+                      href={post.post_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group flex gap-3 p-2.5 sm:p-3 rounded-xl bg-opsly-dark/50 border border-gray-800/80 hover:border-blue-500/40 hover:bg-opsly-dark transition-colors min-w-0"
+                    >
+                      <div className="w-16 h-16 sm:w-[4.25rem] sm:h-[4.25rem] flex-shrink-0 rounded-lg overflow-hidden bg-gray-900/90 ring-1 ring-white/5">
+                        {post.image_url ? (
+                          <img
+                            src={post.image_url}
+                            alt=""
+                            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-blue-500/35">
+                            <FaFacebook className="text-2xl" aria-hidden />
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <div className="p-4 space-y-3">
-                      <div className="text-sm text-gray-400">
-                        {post.created_time
-                          ? new Date(post.created_time).toLocaleString()
-                          : 'Date not available'}
+                      <div className="min-w-0 flex-1 flex flex-col justify-center gap-1">
+                        <time className="text-[11px] sm:text-xs text-gray-500 tabular-nums">
+                          {post.created_time
+                            ? new Date(post.created_time).toLocaleString(undefined, {
+                                dateStyle: 'medium',
+                                timeStyle: 'short',
+                              })
+                            : 'Date unknown'}
+                        </time>
+                        <p className="text-sm text-gray-100 leading-snug line-clamp-2 group-hover:text-white transition-colors">
+                          {post.message?.trim() || 'No caption'}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] sm:text-xs text-gray-500">
+                          <span>
+                            <span className="text-gray-300 tabular-nums">{post.likes ?? 0}</span> likes
+                          </span>
+                          <span className="text-gray-700">·</span>
+                          <span>
+                            <span className="text-gray-300 tabular-nums">{post.comments?.length ?? 0}</span> comments
+                          </span>
+                          <span className="text-gray-700">·</span>
+                          <span>
+                            <span className="text-gray-300 tabular-nums">{post.shares ?? 0}</span> shares
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-white">
-                        {post.message || 'No caption provided'}
-                      </p>
-                      <div className="flex items-center gap-4 text-sm text-gray-300">
-                        <span>👍 {post.likes}</span>
-                        <span>💬 {post.comments?.length || 0}</span>
-                        <span>🔁 {post.shares}</span>
-                      </div>
-                    </div>
-                  </a>
+                      <span className="self-center text-[10px] uppercase tracking-wider text-gray-600 group-hover:text-blue-400/90 flex-shrink-0 hidden sm:inline">
+                        Open
+                      </span>
+                    </a>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
           </div>
         </div>
 
-        {/* Instagram Analytics Section */}
+        {/* Instagram Posts — compact list */}
         <div className="mt-8 sm:mt-12">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4">
-            <h2 className="text-xl sm:text-2xl font-semibold text-white">Instagram Posts</h2>
-            <p className="text-xs sm:text-sm text-gray-400">
-              {instaPosts.length} posts fetched from Instagram
-            </p>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-3 sm:mb-4 pb-3 border-b border-gray-800/80">
+            <div>
+              <h2 className="text-lg sm:text-xl font-semibold text-white tracking-tight">Instagram Posts</h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {instaPosts.length} {instaPosts.length === 1 ? 'post' : 'posts'} · tap a row to open on Instagram
+              </p>
+            </div>
           </div>
 
-          <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
+          <div className="rounded-xl border border-gray-800/60 bg-opsly-card/80 p-3 sm:p-4">
             {isInstaLoading && (
-              <p className="text-sm sm:text-base text-gray-400">Loading Instagram analytics...</p>
+              <p className="text-sm text-gray-400 py-4 text-center">Loading Instagram posts…</p>
             )}
             {instaError && (
-              <p className="text-sm sm:text-base text-red-400">Failed to load posts: {instaError}</p>
+              <p className="text-sm text-red-400 py-2">Failed to load posts: {instaError}</p>
             )}
             {!isInstaLoading && !instaError && instaPosts.length === 0 && (
-              <p className="text-sm sm:text-base text-gray-400">No Instagram posts found.</p>
+              <p className="text-sm text-gray-400 py-4 text-center">No Instagram posts found.</p>
             )}
 
             {!isInstaLoading && !instaError && instaPosts.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <ul className="space-y-2 sm:space-y-2.5 max-h-[min(22rem,42vh)] sm:max-h-[26rem] overflow-y-auto overflow-x-hidden pr-1 -mr-1">
                 {instaPosts.map((post) => (
-                  <a
-                    key={post.post_id || post.timestamp}
-                    href={post.post_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="border border-gray-800 rounded-lg overflow-hidden bg-opsly-dark hover:border-pink-500 transition"
-                  >
-                    {post.media_url && (
-                      <div className="h-48 bg-opsly-card">
-                        <img
-                          src={post.media_url}
-                          alt={post.caption || 'Instagram post'}
-                          className="w-full h-full object-cover"
-                        />
+                  <li key={post.post_id || post.timestamp}>
+                    <a
+                      href={post.post_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group flex gap-3 p-2.5 sm:p-3 rounded-xl bg-opsly-dark/50 border border-gray-800/80 hover:border-pink-500/35 hover:bg-opsly-dark transition-colors min-w-0"
+                    >
+                      <div className="w-16 h-16 sm:w-[4.25rem] sm:h-[4.25rem] flex-shrink-0 rounded-lg overflow-hidden bg-gray-900/90 ring-1 ring-white/5">
+                        {post.media_url ? (
+                          <img
+                            src={post.media_url}
+                            alt=""
+                            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-pink-500/35">
+                            <FaInstagram className="text-2xl" aria-hidden />
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <div className="p-4 space-y-3">
-                      <div className="text-sm text-gray-400 flex justify-between">
-                        <span className="uppercase tracking-wide text-pink-400">
-                          {post.media_type || 'POST'}
-                        </span>
-                        <span>
-                          {post.timestamp
-                            ? new Date(post.timestamp).toLocaleString()
-                            : 'Date not available'}
-                        </span>
-                      </div>
-                      <p className="text-white">
-                        {post.caption || 'No caption provided'}
-                      </p>
-                      <div className="grid grid-cols-3 gap-3 text-sm text-gray-300">
-                        <span>👍 Likes: <span className="text-white">{post.likes ?? 0}</span></span>
-                        <span>💬 Comments: <span className="text-white">{post.comments_count ?? 0}</span></span>
-                        <span>🔁 Shares: <span className="text-white">{post.shares ?? 0}</span></span>
-                        {/* <span>💾 Saved: <span className="text-white">{post.saved ?? 0}</span></span>
-                        <span>📣 Reach: <span className="text-white">{post.reach ?? 0}</span></span>
-                        <span>👀 Impressions: <span className="text-white">{post.impressions ?? 0}</span></span> */}
-                      </div>
-                      {Array.isArray(post.comments) && post.comments.length > 0 && (
-                        <div className="text-sm text-gray-400 border-t border-gray-800 pt-3">
-                          <p className="text-white font-medium mb-2">Recent comments</p>
-                          <ul className="space-y-2">
-                            {post.comments.slice(0, 2).map((comment, idx) => (
-                              <li key={idx} className="text-gray-300">
-                                “{comment}”
-                              </li>
-                            ))}
-                          </ul>
+                      <div className="min-w-0 flex-1 flex flex-col justify-center gap-1">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-gray-500">
+                          <span className="text-[10px] uppercase tracking-wider text-pink-400/90 font-medium">
+                            {post.media_type || 'Post'}
+                          </span>
+                          <span className="text-gray-700">·</span>
+                          <time className="tabular-nums">
+                            {post.timestamp
+                              ? new Date(post.timestamp).toLocaleString(undefined, {
+                                  dateStyle: 'medium',
+                                  timeStyle: 'short',
+                                })
+                              : 'Date unknown'}
+                          </time>
                         </div>
-                      )}
-                    </div>
-                  </a>
+                        <p className="text-sm text-gray-100 leading-snug line-clamp-2 group-hover:text-white transition-colors">
+                          {post.caption?.trim() || 'No caption'}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] sm:text-xs text-gray-500">
+                          <span>
+                            <span className="text-gray-300 tabular-nums">{post.likes ?? 0}</span> likes
+                          </span>
+                          <span className="text-gray-700">·</span>
+                          <span>
+                            <span className="text-gray-300 tabular-nums">{post.comments_count ?? 0}</span> comments
+                          </span>
+                          {(post.shares ?? 0) > 0 && (
+                            <>
+                              <span className="text-gray-700">·</span>
+                              <span>
+                                <span className="text-gray-300 tabular-nums">{post.shares}</span> shares
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <span className="self-center text-[10px] uppercase tracking-wider text-gray-600 group-hover:text-pink-400/90 flex-shrink-0 hidden sm:block">
+                        Open
+                      </span>
+                    </a>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
           </div>
         </div>
