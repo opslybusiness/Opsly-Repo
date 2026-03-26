@@ -98,6 +98,14 @@ function DashboardLayout({ children, userName }) {
               <span className="text-white text-left leading-snug">Social media automation</span>
             </Link>
             <Link 
+              to="/campaign-ops" 
+              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/campaign-ops') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+              onClick={() => setShowMobileMenu(false)}
+            >
+              <HiClock className="text-xl text-white" />
+              <span className="text-white">Campaign Ops</span>
+            </Link>
+            <Link 
               to="/finance" 
               className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/finance') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
               onClick={() => setShowMobileMenu(false)}
@@ -185,6 +193,13 @@ function DashboardLayout({ children, userName }) {
           className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/marketing') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
         >
           <HiPlay className="text-xl text-white" />
+        </Link>
+        <Link
+          to="/campaign-ops"
+          title="Campaign Ops"
+          className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/campaign-ops') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+        >
+          <HiClock className="text-xl text-white" />
         </Link>
         <Link to="/finance" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/finance') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
           <FaCoins className="text-xl text-white" />

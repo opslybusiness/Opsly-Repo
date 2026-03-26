@@ -727,6 +727,13 @@ def forecast_financial_data(
             model_regressors = list(model.regressors)
         elif metadata and 'regressors' in metadata:
             model_regressors = metadata['regressors']
+
+        # Guard against duplicated regressor names coming from model metadata.
+        if model_regressors:
+            unique_regressors = list(dict.fromkeys(model_regressors))
+            if len(unique_regressors) != len(model_regressors):
+                print(f"⚠️ Removed {len(model_regressors) - len(unique_regressors)} duplicate regressor name(s)")
+            model_regressors = unique_regressors
         
         # Add regressors for training period (following Example 4 logic)
         num_months = len(prophet_df)
@@ -856,9 +863,61 @@ def forecast_financial_data(
                 print(f"      ⚠ Filled {nan_count_total} NaN values with calculated values")
             
             print(f"      ✅ Safety check complete. All {len(model_regressors)} regressors present.")
+
+        # Prophet cannot predict with duplicate column labels or duplicate ds rows.
+        if future.columns.duplicated().any():
+            dup_count = int(future.columns.duplicated().sum())
+            print(f"⚠️ Found {dup_count} duplicate future column label(s); keeping first occurrence")
+            future = future.loc[:, ~future.columns.duplicated(keep='first')]
+
+        if future['ds'].duplicated().any():
+            dup_rows = int(future['ds'].duplicated().sum())
+            print(f"⚠️ Found {dup_rows} duplicate future date row(s); keeping last occurrence")
+            future = future.drop_duplicates(subset=['ds'], keep='last').sort_values('ds').reset_index(drop=True)
         
         # Make prediction
-        forecast = model.predict(future)
+        try:
+            forecast = model.predict(future)
+        except Exception as pred_err:
+            err_text = str(pred_err).lower()
+            recoverable_error = (
+                "duplicate labels" in err_text
+                or "stan_backend" in err_text
+            )
+            if not recoverable_error:
+                raise
+
+            print(f"⚠️ Pre-trained model prediction failed: {pred_err}")
+            print("   Falling back to a clean local Prophet model for this request.")
+
+            from prophet import Prophet
+
+            fallback_train = prophet_df[['ds', 'y']].copy()
+            fallback_train = (
+                fallback_train
+                .dropna(subset=['ds', 'y'])
+                .drop_duplicates(subset=['ds'], keep='last')
+                .sort_values('ds')
+                .reset_index(drop=True)
+            )
+
+            fallback_future = future[['ds']].copy()
+            fallback_future = (
+                fallback_future
+                .dropna(subset=['ds'])
+                .drop_duplicates(subset=['ds'], keep='last')
+                .sort_values('ds')
+                .reset_index(drop=True)
+            )
+
+            fallback_model = Prophet(
+                yearly_seasonality=True,
+                weekly_seasonality=False,
+                daily_seasonality=False,
+                seasonality_mode='additive',
+            )
+            fallback_model.fit(fallback_train)
+            forecast = fallback_model.predict(fallback_future)
 
         # Get only the forecasted period
         forecast_period = forecast.tail(months_to_forecast)
