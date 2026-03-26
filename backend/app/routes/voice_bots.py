@@ -237,7 +237,7 @@ def _build_assistant_payload(business_name: str, system_prompt: str) -> dict:
             "provider": "openai",
             "model": "gpt-4o-mini",
             "messages": [{"role": "system", "content": system_prompt}],
-            "fallbackModels": [{"provider": "openai", "model": "gpt-4o"}],
+            "fallbackModels": ["gpt-4o"],
             "tools": _model_tools(),
         },
         "transcriber": {
@@ -587,29 +587,69 @@ def get_recordings(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_user_id_from_token),
 ):
+    """
+    Return ALL calls for the user's assistant — phone, web, and test calls.
+    Filters by assistantId so web/dashboard calls are included too.
+    """
     user = get_current_user(db, user_id)
-    if not user.voice_bot_number:
-        raise HTTPException(status_code=400, detail="No voice bot number configured.")
 
-    params = {}
-    if user.voice_bot_provider_sid:
-        params["phoneNumberId"] = user.voice_bot_provider_sid
+    if not user.vapi_assistant_id:
+        raise HTTPException(status_code=400, detail="No assistant configured yet.")
 
-    resp = _vapi_request("GET", f"{VAPI_BASE_URL}/call",
-                         headers=_vapi_headers(), params=params)
+    resp = _vapi_request(
+        "GET", f"{VAPI_BASE_URL}/call",
+        headers=_vapi_headers(),
+        params={"assistantId": user.vapi_assistant_id},
+    )
     if resp.status_code != 200:
         raise HTTPException(status_code=resp.status_code,
                             detail=f"Failed to fetch calls: {resp.text}")
 
-    recordings = []
+    calls = []
     for call in resp.json():
-        if not params and call.get("phoneNumberId") != user.voice_bot_provider_sid:
-            continue
-        url = call.get("artifact", {}).get("recordingUrl")
-        if url:
-            recordings.append({"url": url, "createdAt": call.get("createdAt"), "id": call.get("id")})
+        artifact      = call.get("artifact", {})
+        recording_url = artifact.get("recordingUrl")
+        transcript    = artifact.get("transcript", "")
 
-    return {"recordings": recordings}
+        # Determine call type label
+        call_type = call.get("type", "")
+        if call_type == "inboundPhoneCall":
+            type_label = "Phone (Inbound)"
+        elif call_type == "outboundPhoneCall":
+            type_label = "Phone (Outbound)"
+        elif call_type == "webCall":
+            type_label = "Web Call"
+        else:
+            type_label = call_type or "Test / Unknown"
+
+        # Duration in seconds
+        started_at  = call.get("startedAt")
+        ended_at    = call.get("endedAt")
+        duration_s  = None
+        if started_at and ended_at:
+            try:
+                from datetime import timezone
+                fmt = "%Y-%m-%dT%H:%M:%S.%fZ"
+                s = datetime.strptime(started_at, fmt).replace(tzinfo=timezone.utc)
+                e = datetime.strptime(ended_at,   fmt).replace(tzinfo=timezone.utc)
+                duration_s = int((e - s).total_seconds())
+            except Exception:
+                pass
+
+        calls.append({
+            "id":            call.get("id"),
+            "type":          type_label,
+            "createdAt":     call.get("createdAt"),
+            "startedAt":     started_at,
+            "endedAt":       ended_at,
+            "duration":      duration_s,
+            "recordingUrl":  recording_url,
+            "transcript":    transcript,
+            "endedReason":   call.get("endedReason"),
+            "cost":          call.get("cost"),
+        })
+
+    return {"recordings": calls}
 
 
 # ===========================================================================

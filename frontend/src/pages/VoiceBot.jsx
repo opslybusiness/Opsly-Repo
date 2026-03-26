@@ -23,11 +23,90 @@ import {
   HiPencil,
   HiCheckCircle,
   HiSave,
+  HiClock,
+  HiChat,
 } from 'react-icons/hi'
+import { FiGlobe, FiPhone } from 'react-icons/fi'
 import { FaRobot } from 'react-icons/fa'
 
 const DEFAULT_SYSTEM_PROMPT =
   'You are a helpful AI assistant for this business. Answer customer questions accurately and politely based on the knowledge base provided. If you don\'t know the answer, say so honestly and offer to connect them with a human agent.'
+
+// ── Call log card (expandable transcript) ────────────────────────────────
+function CallLogCard({ rec, formatDateTime }) {
+  const [expanded, setExpanded] = useState(false)
+  const isPhone = rec.type?.toLowerCase().includes('phone')
+  const TypeIcon = isPhone ? FiPhone : FiGlobe
+
+  const durationLabel = rec.duration != null
+    ? `${Math.floor(rec.duration / 60)}m ${rec.duration % 60}s`
+    : null
+
+  return (
+    <div className="bg-opsly-dark rounded-lg p-3 sm:p-4">
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <TypeIcon className="text-opsly-purple flex-shrink-0 text-base" />
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm text-white font-medium truncate">
+              {rec.type || 'Call'}
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-0.5">
+              <span className="text-[11px] text-gray-500">
+                {formatDateTime(rec.createdAt)}
+              </span>
+              {durationLabel && (
+                <span className="flex items-center gap-0.5 text-[11px] text-gray-500">
+                  <HiClock className="text-[10px]" />{durationLabel}
+                </span>
+              )}
+              {rec.endedReason && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-700 text-gray-400">
+                  {rec.endedReason}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {rec.transcript && (
+            <button
+              onClick={() => setExpanded(v => !v)}
+              className="flex items-center gap-1 px-2 py-1 bg-gray-700 text-gray-300 hover:text-white rounded text-[11px] transition"
+            >
+              <HiChat className="text-xs" />
+              {expanded ? 'Hide' : 'Transcript'}
+            </button>
+          )}
+          {rec.recordingUrl && (
+            <a
+              href={rec.recordingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-opsly-purple text-white rounded hover:bg-purple-700 transition text-[11px] sm:text-xs"
+            >
+              <HiPlay className="text-xs" />
+              Play
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Expandable transcript */}
+      {expanded && rec.transcript && (
+        <div className="mt-3 pt-3 border-t border-gray-700">
+          <p className="text-[11px] text-gray-400 mb-1 font-medium uppercase tracking-wide">Transcript</p>
+          <pre className="text-[11px] sm:text-xs text-gray-300 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
+            {rec.transcript}
+          </pre>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function VoiceBot() {
   // ── Assistant state ──────────────────────────────────────────────────────
@@ -495,13 +574,13 @@ function VoiceBot() {
             </div>
           </div>
 
-          {/* Recordings panel */}
+          {/* Call Logs panel */}
           <div className="xl:col-span-2 flex flex-col bg-opsly-card rounded-lg p-4 sm:p-6 min-h-[260px]">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-white">Call Recordings</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-white">Call Logs</h2>
                 <p className="text-xs sm:text-sm text-gray-400">
-                  Conversations handled by your voice bot
+                  All conversations — phone, web &amp; test calls
                 </p>
               </div>
               <button
@@ -514,16 +593,13 @@ function VoiceBot() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 min-h-[150px]">
+            <div className="flex-1 overflow-y-auto space-y-3 min-h-[150px]">
               {isLoadingRecordings ? (
                 <div className="flex justify-center items-center h-full py-8">
                   <div className="flex gap-2">
                     {[0, 150, 300].map((d) => (
-                      <div
-                        key={d}
-                        className="w-2 h-2 bg-opsly-purple rounded-full animate-bounce"
-                        style={{ animationDelay: `${d}ms` }}
-                      />
+                      <div key={d} className="w-2 h-2 bg-opsly-purple rounded-full animate-bounce"
+                        style={{ animationDelay: `${d}ms` }} />
                     ))}
                   </div>
                 </div>
@@ -531,34 +607,12 @@ function VoiceBot() {
                 <div className="flex flex-col items-center justify-center h-full py-8 text-center px-4">
                   <HiPhoneIncoming className="text-4xl sm:text-5xl text-gray-600 mb-3" />
                   <p className="text-sm sm:text-base text-gray-400 max-w-md">
-                    No recordings yet. Once customers call your voice bot number, recordings
-                    will appear here.
+                    No calls yet. Calls made via phone or web will appear here.
                   </p>
                 </div>
               ) : (
                 recordings.map((rec) => (
-                  <div
-                    key={rec.id || rec.url}
-                    className="flex items-center justify-between bg-opsly-dark rounded-lg p-3 sm:p-4 gap-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm text-gray-300 truncate">
-                        {rec.id || 'Call Recording'}
-                      </p>
-                      <p className="text-[11px] sm:text-xs text-gray-500 mt-1">
-                        {formatDateTime(rec.createdAt || rec.created_at)}
-                      </p>
-                    </div>
-                    <a
-                      href={rec.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-opsly-purple text-white rounded-lg hover:bg-purple-700 transition text-xs sm:text-sm flex-shrink-0"
-                    >
-                      <HiPlay className="flex-shrink-0" />
-                      <span>Play</span>
-                    </a>
-                  </div>
+                  <CallLogCard key={rec.id} rec={rec} formatDateTime={formatDateTime} />
                 ))
               )}
             </div>
