@@ -8,6 +8,7 @@ requests==2.31.0
 python-jose[cryptography]==3.3.0
 pandas>=2.3.3
 kagglehub==0.2.2
+cmdstanpy>=1.2.0
 prophet==1.1.5
 xgboost>=3.1.2
 scikit-learn>=1.7.2

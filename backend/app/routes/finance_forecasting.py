@@ -59,6 +59,35 @@ def load_model():
         )
 
 
+def _heuristic_forecast_like_prophet(prophet_df: pd.DataFrame, future_with_ds: pd.DataFrame) -> pd.DataFrame:
+    """When Prophet.predict or a fresh Prophet fit fails (e.g. CmdStan on Windows), return a
+    minimal DataFrame with ds, yhat, yhat_lower, yhat_upper for the same downstream logic."""
+    y = prophet_df["y"].dropna().astype(float)
+    if y.empty:
+        y = pd.Series([0.0])
+    hist_std = float(y.std()) if len(y) > 1 else max(abs(float(y.iloc[0])) * 0.1, 1.0)
+    last_y = float(y.iloc[-1])
+    n = len(y)
+    monthly_trend = (float(y.iloc[-1]) - float(y.iloc[0])) / max(n - 1, 1) if n >= 2 else 0.0
+
+    rows = []
+    for i, ds in enumerate(future_with_ds["ds"]):
+        months_ahead = i + 1
+        yhat = last_y + monthly_trend * months_ahead
+        if yhat < 0:
+            yhat = max(0.0, float(y.mean()))
+        margin = max(hist_std, abs(yhat) * 0.15, 1.0)
+        rows.append(
+            {
+                "ds": ds,
+                "yhat": yhat,
+                "yhat_lower": max(0.0, yhat - margin),
+                "yhat_upper": yhat + margin,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 @router.post("/finance/data")
 def add_financial_data(
     date: str = Form(...),  # Format: "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS"
@@ -632,9 +661,17 @@ def forecast_financial_data(
             "date": "ds",
             "monthly_expense": "y"
         })
-        
+
+        # Prophet and merge() require unique month timestamps; duplicates break pd.crosstab inside Prophet.
+        if prophet_df["ds"].duplicated().any():
+            prophet_df = (
+                prophet_df.drop_duplicates(subset=["ds"], keep="last")
+                .sort_values("ds")
+                .reset_index(drop=True)
+            )
+
         # Add index regressor (sequential month number)
-        prophet_df['index'] = range(1, len(prophet_df) + 1)
+        prophet_df["index"] = range(1, len(prophet_df) + 1)
 
         # Handle single month of data with simple forecast
         if len(prophet_df) < 2:
@@ -755,7 +792,8 @@ def forecast_financial_data(
             # Merge historical regressors for training period
             regressor_cols = [r for r in model_regressors if r in prophet_df.columns]
             if regressor_cols:
-                future = future.merge(prophet_df[['ds'] + regressor_cols], on='ds', how='left')
+                hist_regs = prophet_df[["ds"] + regressor_cols].drop_duplicates(subset=["ds"], keep="last")
+                future = future.merge(hist_regs, on="ds", how="left")
             
             # Ensure all regressors are in future dataframe
             for regressor in model_regressors:
@@ -874,6 +912,8 @@ def forecast_financial_data(
             dup_rows = int(future['ds'].duplicated().sum())
             print(f"⚠️ Found {dup_rows} duplicate future date row(s); keeping last occurrence")
             future = future.drop_duplicates(subset=['ds'], keep='last').sort_values('ds').reset_index(drop=True)
+
+        future = future.reset_index(drop=True)
         
         # Make prediction
         try:
@@ -882,6 +922,7 @@ def forecast_financial_data(
             err_text = str(pred_err).lower()
             recoverable_error = (
                 "duplicate labels" in err_text
+                or "cannot reindex" in err_text
                 or "stan_backend" in err_text
             )
             if not recoverable_error:
@@ -910,14 +951,18 @@ def forecast_financial_data(
                 .reset_index(drop=True)
             )
 
-            fallback_model = Prophet(
-                yearly_seasonality=True,
-                weekly_seasonality=False,
-                daily_seasonality=False,
-                seasonality_mode='additive',
-            )
-            fallback_model.fit(fallback_train)
-            forecast = fallback_model.predict(fallback_future)
+            try:
+                fallback_model = Prophet(
+                    yearly_seasonality=True,
+                    weekly_seasonality=False,
+                    daily_seasonality=False,
+                    seasonality_mode='additive',
+                )
+                fallback_model.fit(fallback_train)
+                forecast = fallback_model.predict(fallback_future)
+            except Exception as fb_err:
+                print(f"⚠️ Prophet fallback failed ({fb_err}); using heuristic trend forecast.")
+                forecast = _heuristic_forecast_like_prophet(prophet_df, fallback_future)
 
         # Get only the forecasted period
         forecast_period = forecast.tail(months_to_forecast)
