@@ -19,6 +19,7 @@ import RAGChatbot from './pages/RAGChatbot'
 import CustomerChatbot from './pages/CustomerChatbot'
 import SupportUs from './pages/SupportUs'
 import AboutUs from './pages/AboutUs'
+import VoiceBot from './pages/VoiceBot'
 import CampaignOps from './pages/CampaignOps'
 import CampaignConversations from './pages/CampaignConversations'
 
@@ -101,6 +102,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <RAGChatbot />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/voice-bot" 
+            element={
+              <ProtectedRoute>
+                <VoiceBot />
               </ProtectedRoute>
             } 
           />
