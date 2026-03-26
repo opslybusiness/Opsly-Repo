@@ -1,0 +1,28 @@
+requests>=2.31.0
+psycopg[binary]>=3.1
+sqlalchemy>=1.4
+pgvector==0.4.1
+python-dotenv>=1.0.0
+sqlmodel
+
+# FastAPI and web server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Gemini email generation dependencies
+langchain-google-genai>=1.0.0
+langchain-core>=0.1.0
+
+# Google Generative AI (for Gemini embeddings)
+#google-generativeai>=0.3.0
+
+# JWT token handling
+python-jose[cryptography]==3.3.0
+email-validator>=2.2.0
+
+# Cold-email campaign system
+# Email sending uses Python built-ins (smtplib, imaplib, email) — no extra packages needed.
+# Optional: Hunter.io email discovery — set HUNTER_IO_API_KEY env var to enable.
+# Prospect discovery uses Serper.dev — requires SERPER_API_KEY env var.
+beautifulsoup4>=4.12.0   # used for cleaner HTML parsing when scraping prospect websites
+pytest>=8.0.0

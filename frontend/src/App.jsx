@@ -20,6 +20,8 @@ import CustomerChatbot from './pages/CustomerChatbot'
 import SupportUs from './pages/SupportUs'
 import AboutUs from './pages/AboutUs'
 import VoiceBot from './pages/VoiceBot'
+import CampaignOps from './pages/CampaignOps'
+import CampaignConversations from './pages/CampaignConversations'
 
 function App() {
   return (
@@ -134,6 +136,22 @@ function App() {
           <Route 
             path="/about-us" 
             element={<AboutUs />} 
+          />
+          <Route
+            path="/campaign-ops"
+            element={
+              <ProtectedRoute>
+                <CampaignOps />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/campaign-ops/conversations"
+            element={
+              <ProtectedRoute>
+                <CampaignConversations />
+              </ProtectedRoute>
+            }
           />
           </Routes>
           </PageTransition>

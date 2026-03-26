@@ -348,6 +348,30 @@ function MarketingDashboard() {
               <div className="flex items-center gap-2 mb-2">
                 <FaFacebook className="text-xl text-blue-500 flex-shrink-0" />
                 <span className="text-xs sm:text-sm font-medium text-white truncate">Facebook</span>
+        <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2">Marketing</h1>
+            <p className="text-sm sm:text-base text-gray-400">Connect Your Accounts</p>
+          </div>
+          <Link
+            to="/campaign-ops"
+            className="inline-flex items-center justify-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-black hover:bg-amber-400"
+          >
+            Open Campaign Ops
+          </Link>
+        </div>
+
+        {/* Connect Your Accounts Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
+          {/* Facebook Card */}
+          <div className="bg-opsly-card rounded-lg p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+              <FaFacebook className="text-3xl sm:text-4xl text-blue-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <h3 className="text-lg sm:text-xl font-semibold text-white">Facebook</h3>
+                <p className={`text-xs sm:text-sm ${connectionStatus.facebook ? 'text-green-400' : 'text-gray-400'}`}>
+                  {connectionStatus.facebook ? 'Connected' : 'Not Connected'}
+                </p>
               </div>
               <p className={`text-[11px] leading-tight mb-2.5 ${connectionStatus.facebook ? 'text-green-400' : 'text-gray-500'}`}>
                 {connectionStatus.facebook ? 'Connected' : 'Not connected'}
