@@ -22,6 +22,7 @@ import AboutUs from './pages/AboutUs'
 import VoiceBot from './pages/VoiceBot'
 import CampaignOps from './pages/CampaignOps'
 import CampaignConversations from './pages/CampaignConversations'
+import MeetingsCalendar from './pages/MeetingsCalendar'
 
 function App() {
   return (
@@ -150,6 +151,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CampaignConversations />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/meetings"
+            element={
+              <ProtectedRoute>
+                <MeetingsCalendar />
               </ProtectedRoute>
             }
           />

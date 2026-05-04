@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { HiPhone, HiPlay, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX, HiPaperClip, HiMicrophone } from 'react-icons/hi'
+import { HiPhone, HiPlay, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX, HiPaperClip, HiMicrophone, HiCalendar } from 'react-icons/hi'
 import { FaSearch, FaBell, FaCoins } from 'react-icons/fa'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
@@ -114,6 +114,14 @@ function DashboardLayout({ children, userName }) {
               <span className="text-white">Finance</span>
             </Link>
             <Link 
+              to="/meetings" 
+              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/meetings') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+              onClick={() => setShowMobileMenu(false)}
+            >
+              <HiCalendar className="text-xl text-white" />
+              <span className="text-white">Meetings</span>
+            </Link>
+            <Link 
               to="/chatbot" 
               className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/chatbot') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
               onClick={() => setShowMobileMenu(false)}
@@ -209,6 +217,9 @@ function DashboardLayout({ children, userName }) {
         </Link>
         <Link to="/voice-bot" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/voice-bot') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
           <HiMicrophone className="text-xl text-white" />
+        </Link>
+        <Link to="/meetings" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/meetings') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+          <HiCalendar className="text-xl text-white" />
         </Link>
         <div className="mt-auto">
           <button className="mb-4 p-2 rounded-lg hover:bg-gray-700 flex-shrink-0">

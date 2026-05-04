@@ -19,6 +19,7 @@ from app.routes.finance_forecasting import router as finance_forecasting_router
 from app.routes.fraud_detection import router as fraud_detection_router
 from app.routes.categories import router as categories_router
 from app.routes.voice_bots import router as voice_bots_router
+from app.routes.meeting_scheduling import router as meeting_scheduling_router
 from fastapi.middleware.cors import CORSMiddleware
 from uuid import UUID as UUIDType
 
@@ -58,6 +59,7 @@ app.include_router(finance_forecasting_router)
 app.include_router(fraud_detection_router)
 app.include_router(categories_router)
 app.include_router(voice_bots_router)
+app.include_router(meeting_scheduling_router)
 
 FB_APP_ID    = os.getenv("FB_APP_ID")
 FB_APP_SECRET = os.getenv("FB_APP_SECRET")
@@ -71,6 +73,19 @@ LINKEDIN_REDIRECT_URI = os.getenv(
 ).strip().strip('"')
 LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
 _LINKEDIN_SCOPES = "openid profile email w_member_social"
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = os.getenv(
+    "GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback"
+).strip().strip('"')
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
+_GOOGLE_SCOPES = os.getenv(
+    "GOOGLE_SCOPES",
+    "https://www.googleapis.com/auth/calendar.events",
+)
 
 # Scopes required for reading pages, analytics AND publishing posts
 _FB_SCOPES = (
@@ -266,6 +281,109 @@ def linkedin_callback(request: Request, db: Session = Depends(get_db)):
     return RedirectResponse(f"{FRONTEND_URL}/marketing?connected=linkedin")
 
 
+@app.get("/auth/google/login")
+def google_login(user_id: str = None):
+    """
+    Start Google OAuth flow.
+    Pass Supabase user_id as query param so callback can link tokens to the user.
+    """
+    if not GOOGLE_CLIENT_ID:
+        return RedirectResponse(f"{FRONTEND_URL}/marketing?error=google_config_missing")
+
+    state = user_id or "anonymous"
+    q = urlencode(
+        {
+            "client_id": GOOGLE_CLIENT_ID,
+            "redirect_uri": GOOGLE_REDIRECT_URI,
+            "response_type": "code",
+            "scope": _GOOGLE_SCOPES,
+            "access_type": "offline",
+            "include_granted_scopes": "true",
+            "prompt": "consent",
+            "state": state,
+        }
+    )
+    return RedirectResponse(f"{GOOGLE_AUTH_URL}?{q}")
+
+
+@app.get("/auth/google/callback")
+def google_callback(request: Request, db: Session = Depends(get_db)):
+    error = request.query_params.get("error")
+    if error:
+        return RedirectResponse(f"{FRONTEND_URL}/marketing?error=google_{error}")
+
+    code = request.query_params.get("code")
+    state = request.query_params.get("state", "")
+
+    if not code:
+        return RedirectResponse(f"{FRONTEND_URL}/marketing?error=google_denied")
+
+    token_r = requests.post(
+        GOOGLE_TOKEN_URL,
+        data={
+            "code": code,
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "redirect_uri": GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code",
+        },
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        timeout=60,
+    )
+    tok = token_r.json()
+
+    access = tok.get("access_token")
+    refresh = tok.get("refresh_token")
+    expires_in = tok.get("expires_in")
+
+    if not access:
+        return RedirectResponse(f"{FRONTEND_URL}/marketing?error=google_token_failed")
+
+    user_email = None
+    try:
+        userinfo_r = requests.get(
+            GOOGLE_USERINFO_URL,
+            headers={"Authorization": f"Bearer {access}"},
+            timeout=30,
+        )
+        if userinfo_r.ok:
+            user_email = userinfo_r.json().get("email")
+    except Exception:
+        user_email = None
+
+    user_by_uid = None
+    if state and state != "anonymous":
+        try:
+            user_uuid = UUIDType(state)
+            user_by_uid = db.query(User).filter(User.user_id == user_uuid).first()
+        except ValueError:
+            pass
+
+    exp_at = None
+    if expires_in:
+        exp_at = datetime.now(timezone.utc) + timedelta(seconds=int(expires_in))
+
+    if user_by_uid:
+        user_by_uid.google_access_token = access
+        if refresh:
+            user_by_uid.google_refresh_token = refresh
+        user_by_uid.google_token_expires_at = exp_at
+        if user_email:
+            user_by_uid.google_email = user_email
+    else:
+        db.add(
+            User(
+                google_access_token=access,
+                google_refresh_token=refresh,
+                google_token_expires_at=exp_at,
+                google_email=user_email,
+            )
+        )
+
+    db.commit()
+    return RedirectResponse(f"{FRONTEND_URL}/marketing?connected=google")
+
+
 @app.get("/user/connection-status")
 def get_connection_status(
     db: Session = Depends(get_db),
@@ -287,6 +405,7 @@ def get_connection_status(
             "facebook": False,
             "instagram": False,
             "linkedin": False,
+            "google": False,
             "name": None,
         }
 
@@ -297,6 +416,7 @@ def get_connection_status(
         "facebook": has_session_token,
         "instagram": has_session_token,
         "linkedin": has_linkedin,
+        "google": bool(user.google_access_token),
         "name": user.name,
     }
 

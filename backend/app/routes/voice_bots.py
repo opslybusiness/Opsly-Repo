@@ -4,10 +4,11 @@ from sqlalchemy import text
 from uuid import UUID as UUIDType
 from typing import Optional, Union, List
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import logging
 import json
 import os
+import uuid
 import requests
 from requests.exceptions import ReadTimeout, ConnectionError as RequestsConnectionError
 
@@ -32,17 +33,22 @@ BACKEND_PUBLIC_URL   = os.getenv("BACKEND_PUBLIC_URL", "http://localhost:8000")
 # Chatbot backend — handles embeddings and pgvector retrieval (no Jina key needed here)
 CHATBOT_BACKEND_URL  = os.getenv("CHATBOT_BACKEND_URL", "https://chatbot-be-three.vercel.app")
 CHATBOT_INTERNAL_KEY = os.getenv("CHATBOT_INTERNAL_KEY", "")
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_CALENDAR_INSERT_EVENT_URL = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
 DEFAULT_SYSTEM_PROMPT = (
     "You are a helpful AI voice assistant for this business. "
     "Always use the queryDocs tool to search the knowledge base before answering factual questions. "
     "Use getDate when the caller asks about today's date. "
     "Use bookMeeting to schedule appointments when a caller wants to book a meeting. "
+    "Use scheduleMeeting when the caller confirms a meeting time and wants a calendar invite with a Google Meet link. "
     "Be concise, friendly, and professional. "
     "If the knowledge base has no relevant information, say so honestly and offer to connect the caller with a human."
 )
 
-TOOL_NAMES = ("queryDocs", "getDate", "bookMeeting")
+TOOL_NAMES = ("queryDocs", "getDate", "bookMeeting", "scheduleMeeting")
 
 
 # ---------------------------------------------------------------------------
@@ -156,7 +162,111 @@ def _model_tools() -> List[dict]:
             },
             "server": {"url": f"{base}/book-meeting"},
         },
+        {
+            "type": "function",
+            "function": {
+                "name": "scheduleMeeting",
+                "description": (
+                    "Create a real Google Calendar event (with Google Meet link) for the caller. "
+                    "Use after collecting caller details and confirmed time."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string", "description": "Caller's full name."},
+                        "email": {"type": "string", "description": "Caller's email address."},
+                        "summary": {"type": "string", "description": "Meeting title."},
+                        "start": {"type": "string", "description": "Start datetime in ISO format (e.g. 2026-05-05T10:00:00+05:00)."},
+                        "end": {"type": "string", "description": "End datetime in ISO format (e.g. 2026-05-05T10:30:00+05:00)."},
+                        "timezone": {"type": "string", "description": "IANA timezone, e.g. Asia/Karachi."},
+                        "notes": {"type": "string", "description": "Optional notes or agenda."},
+                    },
+                    "required": ["name", "email", "summary", "start", "end"],
+                },
+            },
+            "server": {"url": f"{base}/schedule-meeting"},
+        },
     ]
+
+
+def _refresh_google_access_token(user: User, db: Session) -> None:
+    if not user.google_refresh_token:
+        raise HTTPException(status_code=400, detail="Google refresh token missing for this user.")
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="Google OAuth is not configured on server.")
+
+    resp = requests.post(
+        GOOGLE_TOKEN_URL,
+        data={
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "refresh_token": user.google_refresh_token,
+            "grant_type": "refresh_token",
+        },
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        timeout=60,
+    )
+    data = resp.json()
+    token = data.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Failed to refresh Google token.")
+    user.google_access_token = token
+    expires_in = int(data.get("expires_in", 3600))
+    user.google_token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+
+def _create_google_meeting(user: User, db: Session, summary: str, start: str, end: str, email: str, notes: str = "", tz: str = "UTC"):
+    if not user.google_access_token:
+        raise HTTPException(status_code=400, detail="Google is not connected for this user.")
+
+    if user.google_token_expires_at and user.google_token_expires_at <= (datetime.now(timezone.utc) + timedelta(seconds=60)):
+        _refresh_google_access_token(user, db)
+
+    payload = {
+        "summary": summary,
+        "description": notes or "",
+        "start": {"dateTime": start, "timeZone": tz},
+        "end": {"dateTime": end, "timeZone": tz},
+        "attendees": [{"email": email}],
+        "conferenceData": {
+            "createRequest": {
+                "requestId": str(uuid.uuid4()),
+                "conferenceSolutionKey": {"type": "hangoutsMeet"},
+            }
+        },
+    }
+
+    def _insert(access_token: str):
+        return requests.post(
+            GOOGLE_CALENDAR_INSERT_EVENT_URL,
+            params={"conferenceDataVersion": 1, "sendUpdates": "all"},
+            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=60,
+        )
+
+    resp = _insert(user.google_access_token)
+    if resp.status_code == 401:
+        _refresh_google_access_token(user, db)
+        resp = _insert(user.google_access_token)
+    if resp.status_code not in (200, 201):
+        raise HTTPException(status_code=resp.status_code, detail=f"Failed to create meeting: {resp.text}")
+
+    event = resp.json()
+    meet_link = event.get("hangoutLink")
+    for ep in event.get("conferenceData", {}).get("entryPoints", []):
+        if ep.get("entryPointType") == "video":
+            meet_link = ep.get("uri")
+            break
+
+    return {
+        "event_id": event.get("id"),
+        "event_link": event.get("htmlLink"),
+        "meet_link": meet_link,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -384,6 +494,66 @@ def tool_book_meeting(body: VapiToolRequest, db: Session = Depends(get_db)):
 
     if not results:
         raise HTTPException(status_code=400, detail="No bookMeeting call in request.")
+    return {"results": results}
+
+
+@router.post("/tools/schedule-meeting")
+def tool_schedule_meeting(body: VapiToolRequest, db: Session = Depends(get_db)):
+    """
+    Vapi calls this when the assistant invokes 'scheduleMeeting'.
+    Creates a Google Calendar event + Meet link for the caller.
+    """
+    assistant_id = body.message.call.assistantId if body.message.call else None
+    if not assistant_id:
+        raise HTTPException(status_code=400, detail="Missing assistantId in tool call.")
+
+    user = _user_by_assistant(db, assistant_id)
+    results = []
+    for tc in body.message.toolCalls:
+        if tc.function.name != "scheduleMeeting":
+            continue
+        args = tc.function.arguments
+        if isinstance(args, str):
+            args = json.loads(args)
+
+        name = (args.get("name") or "").strip()
+        email = (args.get("email") or "").strip()
+        summary = (args.get("summary") or "").strip()
+        start = (args.get("start") or "").strip()
+        end = (args.get("end") or "").strip()
+        notes = (args.get("notes") or "").strip()
+        tz = (args.get("timezone") or "UTC").strip()
+
+        if not (name and email and summary and start and end):
+            results.append({
+                "toolCallId": tc.id,
+                "result": "I need name, email, meeting title, start time, and end time to schedule this meeting.",
+            })
+            continue
+
+        try:
+            created = _create_google_meeting(
+                user=user,
+                db=db,
+                summary=summary,
+                start=start,
+                end=end,
+                email=email,
+                notes=notes,
+                tz=tz,
+            )
+            confirmation = (
+                f"Great, your meeting '{summary}' is scheduled. "
+                f"Meet link: {created.get('meet_link') or 'created (no public link returned)'}"
+            )
+        except Exception as exc:
+            logger.error("Failed to schedule Google meeting: %s", exc)
+            confirmation = "I couldn't schedule the Google meeting right now. Please verify Google Calendar connection and try again."
+
+        results.append({"toolCallId": tc.id, "result": confirmation})
+
+    if not results:
+        raise HTTPException(status_code=400, detail="No scheduleMeeting call in request.")
     return {"results": results}
 
 

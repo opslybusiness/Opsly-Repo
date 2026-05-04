@@ -1,0 +1,13 @@
+date,amount,category,use_chip
+2024-01-15,42.50,Groceries,Swipe Transaction
+2024-01-22,18.99,Restaurants,Chip Transaction
+2024-02-03,120.00,Utilities,Online Transaction
+2024-02-14,35.75,Transportation,Swipe Transaction
+2024-03-01,89.40,Groceries,Online Transaction
+2024-03-18,22.10,Coffee,Chip Transaction
+2024-04-05,200.00,Rent,Online Transaction
+2024-04-22,55.30,Entertainment,Swipe Transaction
+2024-05-10,67.85,Groceries,Swipe Transaction
+2024-05-28,14.50,Restaurants,Chip Transaction
+2024-06-12,95.00,Shopping,Online Transaction
+2024-06-30,31.00,Gas,Swipe Transaction

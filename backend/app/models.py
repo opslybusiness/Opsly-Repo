@@ -17,6 +17,11 @@ class User(Base):
     linkedin_refresh_token = Column(Text, nullable=True)
     linkedin_token_expires_at = Column(DateTime(timezone=True), nullable=True)
     linkedin_person_id = Column(String(128), nullable=True, index=True)
+    # Google Calendar / Meet OAuth
+    google_access_token = Column(Text, nullable=True)
+    google_refresh_token = Column(Text, nullable=True)
+    google_token_expires_at = Column(DateTime(timezone=True), nullable=True)
+    google_email = Column(String(255), nullable=True, index=True)
     # Voice bot / Vapi integration
     voice_bot_number = Column(String, nullable=True, index=True)
     voice_bot_provider_sid = Column(String, nullable=True, index=True)  # Vapi phone-number object ID
