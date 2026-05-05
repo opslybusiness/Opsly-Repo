@@ -45,7 +45,19 @@ DEFAULT_SYSTEM_PROMPT = (
     "Use bookMeeting to schedule appointments when a caller wants to book a meeting. "
     "Use scheduleMeeting when the caller confirms a meeting time and wants a calendar invite with a Google Meet link. "
     "Be concise, friendly, and professional. "
-    "If the knowledge base has no relevant information, say so honestly and offer to connect the caller with a human."
+
+    # End-of-call behaviour
+    "When the caller says goodbye, bye, thanks, thank you, or any phrase that signals they are done, "
+    "say a brief, warm farewell (e.g. 'Thank you for calling, have a great day! Goodbye.') and "
+    "immediately end the call — do not keep the conversation going. "
+
+    # Escalation behaviour
+    "If you are unable to answer the caller's question or resolve their issue after searching the "
+    "knowledge base, do NOT guess or make up information. "
+    "Instead, say exactly: "
+    "'I'm sorry, I wasn't able to resolve your issue. I'll escalate this to one of our human agents "
+    "and they will reach out to you shortly. Thank you for your patience. Goodbye.' "
+    "Then end the call and mark the call outcome as unsuccessful so a human agent is notified."
 )
 
 TOOL_NAMES = ("queryDocs", "getDate", "bookMeeting", "scheduleMeeting")
@@ -317,10 +329,18 @@ def get_current_user(db: Session, user_id_str: str) -> User:
 
     user = db.query(User).filter(User.user_id == user_uuid).first()
     if not user:
-        user = User(user_id=user_uuid, facebook_id=None, name=None, session_token=None)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        # Guard against duplicate inserts from rapid concurrent requests
+        try:
+            user = User(user_id=user_uuid, facebook_id=None, name=None, session_token=None)
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        except Exception:
+            db.rollback()
+            # Row was created by a concurrent request — fetch it
+            user = db.query(User).filter(User.user_id == user_uuid).first()
+            if not user:
+                raise HTTPException(status_code=500, detail="Could not create or find user record.")
     return user
 
 
@@ -752,24 +772,17 @@ def get_my_number(
 # RECORDINGS
 # ===========================================================================
 
-@router.get("/recordings")
-def get_recordings(
-    db: Session = Depends(get_db),
-    user_id: str = Depends(get_user_id_from_token),
-):
+def _fetch_all_calls(assistant_id: str) -> list:
     """
-    Return ALL calls for the user's assistant — phone, web, and test calls.
-    Filters by assistantId so web/dashboard calls are included too.
+    Shared helper: fetch every call for the given Vapi assistantId
+    and return a normalised list of call dicts (including analysis fields).
     """
-    user = get_current_user(db, user_id)
-
-    if not user.vapi_assistant_id:
-        raise HTTPException(status_code=400, detail="No assistant configured yet.")
+    from datetime import timezone
 
     resp = _vapi_request(
         "GET", f"{VAPI_BASE_URL}/call",
         headers=_vapi_headers(),
-        params={"assistantId": user.vapi_assistant_id},
+        params={"assistantId": assistant_id},
     )
     if resp.status_code != 200:
         raise HTTPException(status_code=resp.status_code,
@@ -778,10 +791,18 @@ def get_recordings(
     calls = []
     for call in resp.json():
         artifact      = call.get("artifact", {})
+        analysis      = call.get("analysis", {}) or {}
         recording_url = artifact.get("recordingUrl")
         transcript    = artifact.get("transcript", "")
 
-        # Determine call type label
+        # Vapi returns successEvaluation as the string "true"/"false" or None
+        raw_eval = analysis.get("successEvaluation")
+        if raw_eval is None:
+            success_eval = None
+        else:
+            success_eval = str(raw_eval).lower() == "true"
+
+        # Call type label
         call_type = call.get("type", "")
         if call_type == "inboundPhoneCall":
             type_label = "Phone (Inbound)"
@@ -793,12 +814,11 @@ def get_recordings(
             type_label = call_type or "Test / Unknown"
 
         # Duration in seconds
-        started_at  = call.get("startedAt")
-        ended_at    = call.get("endedAt")
-        duration_s  = None
+        started_at = call.get("startedAt")
+        ended_at   = call.get("endedAt")
+        duration_s = None
         if started_at and ended_at:
             try:
-                from datetime import timezone
                 fmt = "%Y-%m-%dT%H:%M:%S.%fZ"
                 s = datetime.strptime(started_at, fmt).replace(tzinfo=timezone.utc)
                 e = datetime.strptime(ended_at,   fmt).replace(tzinfo=timezone.utc)
@@ -807,19 +827,58 @@ def get_recordings(
                 pass
 
         calls.append({
-            "id":            call.get("id"),
-            "type":          type_label,
-            "createdAt":     call.get("createdAt"),
-            "startedAt":     started_at,
-            "endedAt":       ended_at,
-            "duration":      duration_s,
-            "recordingUrl":  recording_url,
-            "transcript":    transcript,
-            "endedReason":   call.get("endedReason"),
-            "cost":          call.get("cost"),
+            "id":               call.get("id"),
+            "type":             type_label,
+            "createdAt":        call.get("createdAt"),
+            "startedAt":        started_at,
+            "endedAt":          ended_at,
+            "duration":         duration_s,
+            "recordingUrl":     recording_url,
+            "transcript":       transcript,
+            "endedReason":      call.get("endedReason"),
+            "cost":             call.get("cost"),
+            # Analysis fields
+            "successEvaluation": success_eval,       # True / False / None
+            "summary":          analysis.get("summary"),
+            "structuredData":   analysis.get("structuredData"),
         })
 
-    return {"recordings": calls}
+    return calls
+
+
+@router.get("/recordings")
+def get_recordings(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_user_id_from_token),
+):
+    """All calls for the user's assistant — phone, web, and test."""
+    user = get_current_user(db, user_id)
+    if not user.vapi_assistant_id:
+        raise HTTPException(status_code=400, detail="No assistant configured yet.")
+
+    return {"recordings": _fetch_all_calls(user.vapi_assistant_id)}
+
+
+@router.get("/escalated-calls")
+def get_escalated_calls(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_user_id_from_token),
+):
+    """
+    Return only calls where Vapi's successEvaluation is False.
+    These represent unresolved / failed interactions that need human follow-up.
+    """
+    user = get_current_user(db, user_id)
+    if not user.vapi_assistant_id:
+        raise HTTPException(status_code=400, detail="No assistant configured yet.")
+
+    all_calls = _fetch_all_calls(user.vapi_assistant_id)
+    escalated = [c for c in all_calls if c["successEvaluation"] is False]
+
+    return {
+        "escalated_calls": escalated,
+        "total":           len(escalated),
+    }
 
 
 # ===========================================================================

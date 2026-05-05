@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { HiPhone, HiPlay, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX, HiPaperClip, HiMicrophone, HiCalendar } from 'react-icons/hi'
+import { HiPhone, HiPlay, HiCog, HiClock, HiChat, HiLogout, HiMenu, HiX, HiPaperClip, HiMicrophone, HiCalendar, HiExclamation } from 'react-icons/hi'
 import { FaSearch, FaBell, FaCoins } from 'react-icons/fa'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
@@ -137,6 +137,14 @@ function DashboardLayout({ children, userName }) {
               <HiMicrophone className="text-xl text-white" />
               <span className="text-white">Voice Bot</span>
             </Link>
+            <Link 
+              to="/escalated-calls" 
+              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/escalated-calls') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+              onClick={() => setShowMobileMenu(false)}
+            >
+              <HiExclamation className="text-xl text-red-400" />
+              <span className="text-white">Escalated Calls</span>
+            </Link>
             <div className="mt-auto w-full">
               <button className="w-full mb-4 p-3 rounded-lg hover:bg-gray-700 flex items-center gap-3">
                 <HiCog className="text-xl text-white" />
@@ -220,6 +228,13 @@ function DashboardLayout({ children, userName }) {
         </Link>
         <Link to="/meetings" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/meetings') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
           <HiCalendar className="text-xl text-white" />
+        </Link>
+        <Link
+          to="/escalated-calls"
+          title="Escalated Calls"
+          className={`mb-4 p-2 rounded-lg flex-shrink-0 relative ${isActive('/escalated-calls') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+        >
+          <HiExclamation className="text-xl text-red-400" />
         </Link>
         <div className="mt-auto">
           <button className="mb-4 p-2 rounded-lg hover:bg-gray-700 flex-shrink-0">

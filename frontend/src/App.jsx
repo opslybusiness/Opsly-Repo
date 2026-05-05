@@ -20,6 +20,7 @@ import CustomerChatbot from './pages/CustomerChatbot'
 import SupportUs from './pages/SupportUs'
 import AboutUs from './pages/AboutUs'
 import VoiceBot from './pages/VoiceBot'
+import EscalatedCalls from './pages/EscalatedCalls'
 import CampaignOps from './pages/CampaignOps'
 import CampaignConversations from './pages/CampaignConversations'
 import MeetingsCalendar from './pages/MeetingsCalendar'
@@ -113,6 +114,14 @@ function App() {
                 <VoiceBot />
               </ProtectedRoute>
             } 
+          />
+          <Route
+            path="/escalated-calls"
+            element={
+              <ProtectedRoute>
+                <EscalatedCalls />
+              </ProtectedRoute>
+            }
           />
           <Route 
             path="/chat" 

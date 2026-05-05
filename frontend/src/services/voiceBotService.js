@@ -55,3 +55,11 @@ export const getVoiceBotRecordings = async () => {
     method: 'GET',
   })
 }
+
+// ── Escalated calls (successEvaluation === false) ────────────────────────────
+
+export const getEscalatedCalls = async () => {
+  return apiClient('/voice-bot/escalated-calls', {
+    method: 'GET',
+  })
+}

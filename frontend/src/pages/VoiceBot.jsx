@@ -30,7 +30,34 @@ import { FiGlobe, FiPhone } from 'react-icons/fi'
 import { FaRobot } from 'react-icons/fa'
 
 const DEFAULT_SYSTEM_PROMPT =
-  'You are a helpful AI assistant for this business. Answer customer questions accurately and politely based on the knowledge base provided. If you don\'t know the answer, say so honestly and offer to connect them with a human agent.'
+  'You are a helpful AI voice assistant for this business. ' +
+  'Always use the queryDocs tool to search the knowledge base before answering factual questions. ' +
+  'Use getDate when the caller asks about today\'s date. ' +
+  'Use bookMeeting to schedule appointments when a caller wants to book a meeting. ' +
+  'Be concise, friendly, and professional. ' +
+  'When the caller says goodbye, bye, thanks, thank you, or any phrase that signals they are done, ' +
+  'say a brief, warm farewell (e.g. "Thank you for calling, have a great day! Goodbye.") and ' +
+  'immediately end the call — do not keep the conversation going. ' +
+  'If you are unable to answer the caller\'s question or resolve their issue after searching the ' +
+  'knowledge base, do NOT guess or make up information. ' +
+  'Instead, say exactly: ' +
+  '"I\'m sorry, I wasn\'t able to resolve your issue. I\'ll escalate this to one of our human agents ' +
+  'and they will reach out to you shortly. Thank you for your patience. Goodbye." ' +
+  'Then end the call and mark the call outcome as unsuccessful so a human agent is notified.'
+
+// ── Module-level cache (survives tab switches, resets after 2 min or manual refresh) ──
+const CACHE_TTL = 2 * 60 * 1000  // 2 minutes
+const _cache = {
+  recordings: null,
+  recordingsAt: 0,
+  assistant: null,
+  assistantAt: 0,
+  number: null,
+  numberAt: 0,
+  docs: null,
+  docsAt: 0,
+}
+const cacheValid = (key) => _cache[key] !== null && Date.now() - _cache[key + 'At'] < CACHE_TTL
 
 // ── Call log card (expandable transcript) ────────────────────────────────
 function CallLogCard({ rec, formatDateTime }) {
@@ -135,7 +162,7 @@ function VoiceBot() {
 
   const fileInputRef = useRef(null)
 
-  // ── Initial data load ────────────────────────────────────────────────────
+  // ── Initial data load (uses cache — won't re-fetch on tab switch) ────────
   useEffect(() => {
     loadAssistant()
     loadVoiceNumber()
@@ -144,10 +171,19 @@ function VoiceBot() {
   }, [])
 
   // ── Assistant ─────────────────────────────────────────────────────────────
-  const loadAssistant = async () => {
+  const loadAssistant = async (force = false) => {
+    if (!force && cacheValid('assistant')) {
+      const d = _cache.assistant
+      setAssistant(d)
+      setSystemPrompt(d?.system_prompt || DEFAULT_SYSTEM_PROMPT)
+      setBusinessName(d?.vapi_details?.name || '')
+      return
+    }
     setIsLoadingAssistant(true)
     try {
       const data = await getAssistant()
+      _cache.assistant = data
+      _cache.assistantAt = Date.now()
       setAssistant(data)
       setSystemPrompt(data.system_prompt || DEFAULT_SYSTEM_PROMPT)
       setBusinessName(data.vapi_details?.name || '')
@@ -168,6 +204,8 @@ function VoiceBot() {
       } else {
         data = await createAssistant(businessName || 'My Business', systemPrompt)
       }
+      _cache.assistant = data
+      _cache.assistantAt = Date.now()
       setAssistant(data)
       setSystemPrompt(data.system_prompt || systemPrompt)
       setEditingPrompt(false)
@@ -181,10 +219,17 @@ function VoiceBot() {
   }
 
   // ── Phone number ──────────────────────────────────────────────────────────
-  const loadVoiceNumber = async () => {
+  const loadVoiceNumber = async (force = false) => {
+    if (!force && cacheValid('number')) {
+      setVoiceNumber(_cache.number)
+      return
+    }
     try {
       const data = await getVoiceBotNumber()
-      setVoiceNumber(data.voice_bot_number || data.number)
+      const num = data.voice_bot_number || data.number
+      _cache.number = num
+      _cache.numberAt = Date.now()
+      setVoiceNumber(num)
     } catch {
       // 404 = no number yet
     }
@@ -207,11 +252,17 @@ function VoiceBot() {
   }
 
   // ── Documents ─────────────────────────────────────────────────────────────
-  const loadDocuments = async () => {
+  const loadDocuments = async (force = false) => {
+    if (!force && cacheValid('docs')) {
+      setDocuments(_cache.docs)
+      return
+    }
     setIsLoadingDocs(true)
     try {
       const docs = await listDocuments()
-      setDocuments(docs || [])
+      _cache.docs = docs || []
+      _cache.docsAt = Date.now()
+      setDocuments(_cache.docs)
     } catch {
       // ignore
     } finally {
@@ -233,7 +284,7 @@ function VoiceBot() {
           setUploadProgress((prev) => ({ ...prev, [file.name]: 'error' }))
         }
       }
-      await loadDocuments()
+      await loadDocuments(true)   // force refresh after upload
       setTimeout(() => setUploadProgress({}), 2000)
     } catch (err) {
       alert(err.message || 'Failed to upload documents')
@@ -258,18 +309,24 @@ function VoiceBot() {
     if (!window.confirm(`Are you sure you want to delete ${filename}?`)) return
     try {
       await deleteDocument(fileId)
-      await loadDocuments()
+      await loadDocuments(true)   // force refresh after delete
     } catch (err) {
       alert(err.message || 'Failed to delete document')
     }
   }
 
   // ── Recordings ────────────────────────────────────────────────────────────
-  const loadRecordings = async () => {
+  const loadRecordings = async (force = false) => {
+    if (!force && cacheValid('recordings')) {
+      setRecordings(_cache.recordings)
+      return
+    }
     setIsLoadingRecordings(true)
     try {
       const data = await getVoiceBotRecordings()
-      setRecordings(data.recordings || [])
+      _cache.recordings = data.recordings || []
+      _cache.recordingsAt = Date.now()
+      setRecordings(_cache.recordings)
     } catch {
       // ignore
     } finally {
@@ -533,7 +590,7 @@ function VoiceBot() {
                       Uploaded Files
                     </h3>
                     <button
-                      onClick={loadDocuments}
+                      onClick={() => loadDocuments(true)}
                       disabled={isLoadingDocs}
                       className="text-xs text-gray-300 hover:text-white flex items-center gap-1 disabled:opacity-60"
                     >
@@ -584,7 +641,7 @@ function VoiceBot() {
                 </p>
               </div>
               <button
-                onClick={loadRecordings}
+                onClick={() => loadRecordings(true)}
                 disabled={isLoadingRecordings}
                 className="px-3 sm:px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2 text-xs sm:text-sm disabled:opacity-60 flex-shrink-0"
               >
