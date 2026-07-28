@@ -35,7 +35,7 @@ export const MarketingProvider = ({ children }) => {
   // Fetch Facebook analytics
   const fetchFbAnalytics = useCallback(async (forceRefresh = false) => {
     // Return cached data if valid and not forcing refresh
-    if (!forceRefresh && isCacheValid(fbCacheTime) && fbPosts.length >= 0) {
+    if (!forceRefresh && isCacheValid(fbCacheTime) && fbPosts.length > 0) {
       return { analytics: fbPosts }
     }
 
@@ -64,7 +64,7 @@ export const MarketingProvider = ({ children }) => {
   // Fetch Instagram analytics
   const fetchInstaAnalytics = useCallback(async (forceRefresh = false) => {
     // Return cached data if valid and not forcing refresh
-    if (!forceRefresh && isCacheValid(instaCacheTime) && instaPosts.length >= 0) {
+    if (!forceRefresh && isCacheValid(instaCacheTime) && instaPosts.length > 0) {
       return { analytics: instaPosts }
     }
 

@@ -8,8 +8,8 @@ load_dotenv()
 # Your DATABASE_URL from .env
 DATABASE_URL =os.getenv("DATABASE_URL")
 
-# Create synchronous engine
-engine = create_engine(DATABASE_URL, echo=True)
+# Create synchronous engine with echo only in debug/dev mode
+engine = create_engine(DATABASE_URL, echo=os.getenv("SQL_ECHO", "false").lower() == "true")
 
 # Create a session local class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

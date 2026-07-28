@@ -8,6 +8,7 @@ function FinanceDashboard() {
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [newTransaction, setNewTransaction] = useState({ date: '', amount: '', category: '', use_chip: '' })
@@ -41,6 +42,7 @@ function FinanceDashboard() {
     try {
       setLoading(true)
       setError('')
+      setSuccess('')
       const params = { limit: 100 }
       if (selectedMonth && selectedYear) {
         params.month = selectedMonth
@@ -96,7 +98,7 @@ function FinanceDashboard() {
       setUploadFile(null)
       // Refresh data
       await fetchFinancialData()
-      alert(`Successfully uploaded ${response.added_count} transactions!`)
+      setSuccess(`Successfully uploaded ${response.added_count} transactions!`)
     } catch (err) {
       console.error('Error uploading CSV:', err)
       setError(err.message || 'Failed to upload CSV file')
@@ -133,6 +135,12 @@ function FinanceDashboard() {
         {error && (
           <div className="mb-4 p-3 sm:p-4 text-sm sm:text-base bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg">
             {error}
+          </div>
+        )}
+        {/* Success Message */}
+        {success && (
+          <div className="mb-4 p-3 sm:p-4 text-sm sm:text-base bg-green-500/20 border border-green-500/50 text-green-200 rounded-lg">
+            {success}
           </div>
         )}
 

@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { getFinancialForecast, getFinancialData } from '../services/financeService'
 import { HiRefresh } from 'react-icons/hi'
+import { useAuth } from '../contexts/AuthContext'
 
 function FinanceForecast() {
+  const { user } = useAuth()
   const [forecastDays, setForecastDays] = useState(30)
   const [chartData, setChartData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -98,7 +100,7 @@ function FinanceForecast() {
   }
 
   return (
-    <DashboardLayout userName="Amanda">
+    <DashboardLayout userName={user?.user_metadata?.name || user?.email || 'User'}>
       <div>
         <Link to="/finance" className="text-opsly-purple mb-4 inline-block">← Back</Link>
         <h1 className="text-4xl font-bold text-white mb-2">Monthly Forecast</h1>

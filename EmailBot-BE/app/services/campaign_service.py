@@ -67,7 +67,6 @@ class CampaignService:
         self.email_gen = EmailGenService()
         self.email_send = EmailSendService()
         self.security = SecurityService()
-        _ensure_tables()
 
     @staticmethod
     def _normalize_email(email: Optional[str]) -> str:

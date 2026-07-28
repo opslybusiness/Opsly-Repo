@@ -91,11 +91,12 @@ function MeetingsCalendar() {
     }
   }, [authLoading, isAuthenticated, userId])
 
-  const handleConnectGoogle = () => {
-    const url = userId
-      ? getApiUrl(`/auth/google/login?user_id=${userId}`)
-      : getApiUrl('/auth/google/login')
-    window.location.href = url
+  const googleAuthUrl = userId
+    ? getApiUrl(`/auth/google/login?user_id=${encodeURIComponent(userId)}&return_to=${encodeURIComponent(`${window.location.origin}/meetings`)}`)
+    : getApiUrl(`/auth/google/login?return_to=${encodeURIComponent(`${window.location.origin}/meetings`)}`)
+
+  const handleGoogleAuth = () => {
+    window.location.href = googleAuthUrl
   }
 
   const loadCalendarData = async (dateValue = selectedDate, timezoneValue = form.timezone) => {
@@ -218,14 +219,25 @@ function MeetingsCalendar() {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={handleConnectGoogle}
-              disabled={isGoogleConnected}
-              className="w-full py-2.5 text-sm font-medium bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGoogleConnected ? 'Google Connected' : 'Connect Google'}
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleGoogleAuth}
+                className="w-full py-2.5 text-sm font-medium bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition"
+              >
+                {isGoogleConnected ? 'Open Google Reconnect Flow' : 'Connect Google'}
+              </button>
+              <button
+                type="button"
+                onClick={handleGoogleAuth}
+                className="w-full py-2.5 text-sm font-medium bg-transparent text-white rounded-lg border border-gray-700 hover:border-gray-500 hover:bg-white/5 transition"
+              >
+                {isGoogleConnected ? 'Reconnect / refresh Google access' : 'Reconnect Google'}
+              </button>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Use reconnect if Google access was revoked, expired, or you want a fresh consent screen.
+              </p>
+            </div>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import DashboardLayout from '../components/DashboardLayout'
 import { FaFacebook, FaInstagram, FaLinkedin } from 'react-icons/fa'
-import { HiCalendar, HiPhotograph } from 'react-icons/hi'
+import { HiCalendar, HiPhotograph, HiClock } from 'react-icons/hi'
 import { useEffect, useState, useRef } from 'react'
 import { getApiUrl } from '../config/api'
 import { postDynamic, getConnectionStatus } from '../services/marketingService'
@@ -333,18 +333,18 @@ function MarketingDashboard() {
     <DashboardLayout>
       <div className="min-w-0 max-w-full">
         {/* Hero: title + compact connect cards (top-right on large screens) */}
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-6 sm:mb-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-8 sm:mb-10">
           <header className="min-w-0 flex-1">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 tracking-tight">
-              Social media automation
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-2 sm:mb-3 tracking-tight">
+              Social Media <span className="text-transparent bg-clip-text bg-gradient-to-r from-opsly-purple to-indigo-400">Automation</span>
             </h1>
-            <p className="text-sm text-gray-400 max-w-xl">
+            <p className="text-sm sm:text-base text-slate-400 max-w-xl">
               Publish and schedule content to your connected channels.
             </p>
           </header>
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3 w-full sm:w-[min(100%,22rem)] lg:w-[24rem] lg:shrink-0 lg:ml-auto">
-            <div className="min-w-0 rounded-xl border border-gray-800/80 bg-opsly-card/90 p-2.5 sm:p-3 flex flex-col">
+            <div className="min-w-0 rounded-2xl border border-white/5 bg-opsly-card/40 backdrop-blur-xl p-3 sm:p-4 flex flex-col hover:bg-opsly-card/60 transition-colors">
               <div className="flex items-center gap-2 mb-2">
                 <FaFacebook className="text-xl text-blue-500 flex-shrink-0" />
                 <span className="text-xs sm:text-sm font-medium text-white truncate">Facebook</span>
@@ -362,7 +362,7 @@ function MarketingDashboard() {
               </button>
             </div>
 
-            <div className="min-w-0 rounded-xl border border-gray-800/80 bg-opsly-card/90 p-2.5 sm:p-3 flex flex-col">
+            <div className="min-w-0 rounded-2xl border border-white/5 bg-opsly-card/40 backdrop-blur-xl p-3 sm:p-4 flex flex-col hover:bg-opsly-card/60 transition-colors">
               <div className="flex items-center gap-2 mb-2">
                 <FaInstagram
                   className="text-xl flex-shrink-0"
@@ -386,7 +386,7 @@ function MarketingDashboard() {
               </button>
             </div>
 
-            <div className="min-w-0 rounded-xl border border-gray-800/80 bg-opsly-card/90 p-2.5 sm:p-3 flex flex-col">
+            <div className="min-w-0 rounded-2xl border border-white/5 bg-opsly-card/40 backdrop-blur-xl p-3 sm:p-4 flex flex-col hover:bg-opsly-card/60 transition-colors">
               <div className="flex items-center gap-2 mb-2">
                 <FaLinkedin className="text-xl text-[#0A66C2] flex-shrink-0" />
                 <span className="text-xs sm:text-sm font-medium text-white truncate">LinkedIn</span>
@@ -407,7 +407,7 @@ function MarketingDashboard() {
         </div>
 
         {/* Create New Post — image left, options right */}
-        <div className="bg-opsly-card rounded-xl border border-gray-800/60 p-4 sm:p-6 mb-8 sm:mb-12">
+        <div className="bg-opsly-card/40 backdrop-blur-xl rounded-3xl border border-white/5 p-5 sm:p-8 mb-8 sm:mb-12 shadow-xl">
           <div className="mb-4 sm:mb-5">
             <h2 className="text-lg sm:text-xl font-semibold text-white">Create new post</h2>
             <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Add media, caption, timing, and destinations</p>
@@ -435,10 +435,10 @@ function MarketingDashboard() {
                 />
                 <label
                   htmlFor="post-image-input"
-                  className={`group relative flex flex-col flex-1 min-h-[14rem] sm:min-h-[17rem] rounded-xl border-2 border-dashed cursor-pointer overflow-hidden transition-colors ${
+                  className={`group relative flex flex-col flex-1 min-h-[14rem] sm:min-h-[17rem] rounded-2xl border-2 border-dashed cursor-pointer overflow-hidden transition-all ${
                     imagePreviewUrl
-                      ? 'border-gray-700 bg-opsly-dark'
-                      : 'border-gray-700 bg-opsly-dark/50 hover:border-opsly-purple/50 hover:bg-opsly-dark'
+                      ? 'border-white/10 bg-white/5'
+                      : 'border-white/10 bg-white/5 hover:border-opsly-purple hover:bg-white/10'
                   }`}
                 >
                   {imagePreviewUrl ? (
@@ -486,8 +486,8 @@ function MarketingDashboard() {
                       onClick={() => setPostForm({ ...postForm, postToFacebook: !postForm.postToFacebook })}
                       className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
                         postForm.postToFacebook
-                          ? 'border-blue-500/60 bg-blue-500/15 text-white'
-                          : 'border-gray-700 bg-opsly-dark text-gray-400 hover:border-gray-600'
+                          ? 'border-blue-500/50 bg-blue-500/20 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+                          : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20'
                       }`}
                     >
                       <FaFacebook className={`text-lg ${postForm.postToFacebook ? 'text-blue-400' : 'text-gray-500'}`} />
@@ -498,8 +498,8 @@ function MarketingDashboard() {
                       onClick={() => setPostForm({ ...postForm, postToInstagram: !postForm.postToInstagram })}
                       className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
                         postForm.postToInstagram
-                          ? 'border-pink-500/60 bg-pink-500/15 text-white'
-                          : 'border-gray-700 bg-opsly-dark text-gray-400 hover:border-gray-600'
+                          ? 'border-pink-500/50 bg-pink-500/20 text-white shadow-[0_0_15px_rgba(236,72,153,0.3)]'
+                          : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20'
                       }`}
                     >
                       <FaInstagram className={`text-lg ${postForm.postToInstagram ? 'text-pink-400' : 'text-gray-500'}`} />
@@ -510,8 +510,8 @@ function MarketingDashboard() {
                       onClick={() => setPostForm({ ...postForm, postToLinkedin: !postForm.postToLinkedin })}
                       className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
                         postForm.postToLinkedin
-                          ? 'border-[#0A66C2]/60 bg-[#0A66C2]/15 text-white'
-                          : 'border-gray-700 bg-opsly-dark text-gray-400 hover:border-gray-600'
+                          ? 'border-[#0A66C2]/50 bg-[#0A66C2]/20 text-white shadow-[0_0_15px_rgba(10,102,194,0.3)]'
+                          : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20'
                       }`}
                     >
                       <FaLinkedin className={`text-lg ${postForm.postToLinkedin ? 'text-[#0A66C2]' : 'text-gray-500'}`} />
@@ -530,13 +530,13 @@ function MarketingDashboard() {
                     onChange={(e) => setPostForm({ ...postForm, message: e.target.value })}
                     placeholder="Write a caption…"
                     rows={5}
-                    className="w-full px-3 py-2.5 text-sm bg-opsly-dark text-white rounded-lg border border-gray-800 focus:outline-none focus:ring-2 focus:ring-opsly-purple/60 focus:border-transparent resize-none min-h-[7.5rem]"
+                    className="w-full px-4 py-3 text-sm bg-white/5 text-white rounded-xl border border-white/10 focus:outline-none focus:ring-2 focus:ring-opsly-purple focus:border-transparent resize-none min-h-[7.5rem] placeholder:text-slate-500 transition-all"
                   />
                 </div>
 
                 <div>
                   <span className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2 block">When to post</span>
-                  <div className="flex p-1 rounded-xl bg-opsly-dark border border-gray-800 w-full max-w-md">
+                  <div className="flex p-1.5 rounded-xl bg-white/5 border border-white/10 w-full max-w-md">
                     <button
                       type="button"
                       onClick={() =>
@@ -613,11 +613,11 @@ function MarketingDashboard() {
                       isPosting ||
                       (!postForm.postToFacebook && !postForm.postToInstagram && !postForm.postToLinkedin)
                     }
-                    className="flex-1 px-4 py-2.5 text-sm font-medium bg-opsly-purple text-white rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                    className="flex-1 px-6 py-3 text-sm font-semibold bg-opsly-purple text-white rounded-xl hover:bg-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
                   >
                     {isPosting ? (
                       <>
-                        <span className="inline-block animate-pulse">⏳</span>
+                        <HiCalendar className="animate-pulse text-lg" />
                         Publishing…
                       </>
                     ) : postForm.postNow ? (
@@ -653,7 +653,7 @@ function MarketingDashboard() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-gray-800/60 bg-opsly-card/80 p-3 sm:p-4">
+          <div className="rounded-3xl border border-white/5 bg-opsly-card/40 backdrop-blur-xl p-4 sm:p-6 shadow-lg">
             {isFbLoading && (
               <p className="text-sm text-gray-400 py-4 text-center">Loading Facebook posts…</p>
             )}
@@ -735,7 +735,7 @@ function MarketingDashboard() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-gray-800/60 bg-opsly-card/80 p-3 sm:p-4">
+          <div className="rounded-3xl border border-white/5 bg-opsly-card/40 backdrop-blur-xl p-4 sm:p-6 shadow-lg">
             {isInstaLoading && (
               <p className="text-sm text-gray-400 py-4 text-center">Loading Instagram posts…</p>
             )}

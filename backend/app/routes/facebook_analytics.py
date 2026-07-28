@@ -1,6 +1,7 @@
-from fastapi import Depends, APIRouter
+from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
 import requests
+from requests.exceptions import RequestException, Timeout
 from uuid import UUID as UUIDType
 
 from app.database import get_db
@@ -8,6 +9,17 @@ from app.models import User
 from app.auth import get_user_id_from_token
 
 router = APIRouter()
+
+
+def _graph_get(url: str, params: dict, timeout: int = 30):
+    try:
+        response = requests.get(url, params=params, timeout=timeout)
+        response.raise_for_status()
+        return response.json()
+    except Timeout:
+        raise HTTPException(status_code=504, detail="Facebook Graph API request timed out.")
+    except RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Facebook Graph API request failed: {exc}")
 
 @router.get("/facebook/page-analytics")
 def get_page_post_analytics(
@@ -27,10 +39,10 @@ def get_page_post_analytics(
     user_token = user.session_token
 
     # 2. Get pages managed by user
-    pages_resp = requests.get(
-        f"https://graph.facebook.com/v24.0/me/accounts",
+    pages_resp = _graph_get(
+        "https://graph.facebook.com/v24.0/me/accounts",
         params={"access_token": user_token}
-    ).json()
+    )
 
     if "data" not in pages_resp or not pages_resp["data"]:
         return {"error": "No managed pages found", "details": pages_resp}
@@ -42,13 +54,13 @@ def get_page_post_analytics(
     #print(page_id,page_token)
 
     # 3. Get posts from the page
-    posts_resp = requests.get(
+    posts_resp = _graph_get(
         f"https://graph.facebook.com/v24.0/{page_id}/posts",
         params={
             "fields": "id,message,created_time,full_picture,permalink_url",
             "access_token": page_token
         }
-    ).json()
+    )
 
     if "data" not in posts_resp:
         return {"error": "Failed to fetch posts", "details": posts_resp}
@@ -59,10 +71,10 @@ def get_page_post_analytics(
         post_id = post["id"]
 
         # Likes
-        like_data = requests.get(
+        like_data = _graph_get(
             f"https://graph.facebook.com/v24.0/{post_id}/likes",
             params={"summary": "total_count", "access_token": page_token}
-        ).json()
+        )
     #     like_data = requests.get(
     # f"https://graph.facebook.com/v24.0/{post_id}",
     # params={
@@ -79,23 +91,23 @@ def get_page_post_analytics(
         #     f"https://graph.facebook.com/v24.0/{post_id}/comments",
         #     params={"summary": "total_count", "access_token": page_token}
         # ).json()
-        comments_resp = requests.get(
+        comments_resp = _graph_get(
             f"https://graph.facebook.com/v24.0/{post_id}/comments",
             params={
                 "fields": "id,from,message,created_time,like_count",
                 "summary": "total_count",
                 "access_token": page_token
             }
-        ).json()
+        )
         total_comments = comments_resp.get("summary", {}).get("total_count", 0)
         comments_list = comments_resp.get("data", [])
 
         
         # Shares
-        share_data = requests.get(
+        share_data = _graph_get(
             f"https://graph.facebook.com/v24.0/{post_id}/sharedposts",
             params={"summary": "total_count", "access_token": page_token}
-        ).json()
+        )
 
         analytics.append({
             "post_id": post_id,

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import requests
+from requests.exceptions import RequestException, Timeout
 from uuid import UUID as UUIDType
 
 from app.database import get_db
@@ -8,6 +9,17 @@ from app.models import User
 from app.auth import get_user_id_from_token
 
 router = APIRouter()
+
+
+def _graph_get(url: str, params: dict, timeout: int = 30):
+    try:
+        response = requests.get(url, params=params, timeout=timeout)
+        response.raise_for_status()
+        return response.json()
+    except Timeout:
+        raise HTTPException(status_code=504, detail="Instagram Graph API request timed out.")
+    except RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Instagram Graph API request failed: {exc}")
 
 
 @router.get("/instagram/page-analytics")
@@ -28,10 +40,10 @@ def get_instagram_post_analytics(
     user_token = user.session_token
 
     # 2. Get Pages the user manages
-    pages_resp = requests.get(
+    pages_resp = _graph_get(
         "https://graph.facebook.com/v24.0/me/accounts",
         params={"access_token": user_token}
-    ).json()
+    )
 
     if "data" not in pages_resp or not pages_resp["data"]:
         return {"error": "No Facebook Pages found", "details": pages_resp}
@@ -42,13 +54,13 @@ def get_instagram_post_analytics(
     page_id = page_info["id"]
 
     # 3. Get Instagram Business Account linked to Page
-    ig_resp = requests.get(
+    ig_resp = _graph_get(
         f"https://graph.facebook.com/v24.0/{page_id}",
         params={
             "fields": "instagram_business_account",
             "access_token": page_token
         }
-    ).json()
+    )
 
     if "instagram_business_account" not in ig_resp:
         return {"error": "No Instagram business account linked", "details": ig_resp}
@@ -56,13 +68,13 @@ def get_instagram_post_analytics(
     ig_user_id = ig_resp["instagram_business_account"]["id"]
 
     # 4. Get Instagram media (posts)
-    media_resp = requests.get(
+    media_resp = _graph_get(
         f"https://graph.facebook.com/v24.0/{ig_user_id}/media",
         params={
             "fields": "id,caption,media_type,media_url,timestamp,permalink",
             "access_token": page_token
         }
-    ).json()
+    )
 
     if "data" not in media_resp:
         return {"error": "Failed to fetch Instagram posts", "details": media_resp}
@@ -73,13 +85,13 @@ def get_instagram_post_analytics(
         post_id = post["id"]
 
         # ----- Basic metrics (likes, comments, saves, shares, reach, impressions) -----
-        metrics_resp = requests.get(
+        metrics_resp = _graph_get(
             f"https://graph.facebook.com/v24.0/{post_id}/insights",
             params={
                 "metric": "likes,comments,shares,saved,reach,impressions",
                 "access_token": page_token
             }
-        ).json()
+        )
 
         metrics_dict = {}
         if "data" in metrics_resp:
@@ -87,13 +99,13 @@ def get_instagram_post_analytics(
                 metrics_dict[m["name"]] = m.get("values", [{}])[0].get("value", 0)
 
         # ----- Fetch comments list -----
-        comments_resp = requests.get(
+        comments_resp = _graph_get(
             f"https://graph.facebook.com/v24.0/{post_id}/comments",
             params={
                 "fields": "id,text,username,timestamp,like_count",
                 "access_token": page_token
             }
-        ).json()
+        )
 
         comments_list = comments_resp.get("data", [])
 

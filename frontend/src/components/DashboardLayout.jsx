@@ -13,7 +13,6 @@ function DashboardLayout({ children, userName }) {
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [userNameFromBackend, setUserNameFromBackend] = useState(null)
 
-  // Fetch user name from backend
   useEffect(() => {
     const fetchUserName = async () => {
       if (isAuthenticated && userId) {
@@ -27,16 +26,12 @@ function DashboardLayout({ children, userName }) {
         }
       }
     }
-
     fetchUserName()
   }, [isAuthenticated, userId])
 
-  // Get user name from backend first, then prop, then auth, then fallback
   const displayName = userNameFromBackend || userName || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
 
-  const isActive = (path) => {
-    return location.pathname.startsWith(path)
-  }
+  const isActive = (path) => location.pathname.startsWith(path)
 
   const handleLogout = async () => {
     try {
@@ -48,232 +43,123 @@ function DashboardLayout({ children, userName }) {
     }
   }
 
+  const NavItem = ({ to, icon: Icon, label, alert }) => (
+    <Link
+      to={to}
+      title={label}
+      className={`group relative flex items-center justify-center lg:mb-4 p-3 rounded-xl transition-all duration-300 ${
+        isActive(to)
+          ? 'bg-opsly-purple/20 text-opsly-purple shadow-[inset_0_0_12px_rgba(139,92,246,0.3)]'
+          : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+      }`}
+      onClick={() => setShowMobileMenu(false)}
+    >
+      <Icon className={`text-xl ${alert ? 'text-red-400' : ''}`} />
+      <span className="lg:hidden ml-3 font-medium flex-1">{label}</span>
+      {/* Tooltip for Desktop */}
+      <div className="hidden lg:block absolute left-14 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+        {label}
+      </div>
+    </Link>
+  )
+
   return (
-    <div className="h-screen flex bg-opsly-gray overflow-hidden w-full">
+    <div className="h-screen flex bg-opsly-dark text-slate-100 font-sans overflow-hidden w-full selection:bg-opsly-purple/30">
+      
+      {/* Dynamic Background for App */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-opsly-purple/10 rounded-full mix-blend-screen filter blur-[100px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-indigo-900/10 rounded-full mix-blend-screen filter blur-[100px]"></div>
+      </div>
+
       {/* Mobile Menu Overlay */}
       {showMobileMenu && (
         <>
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity" 
             onClick={() => setShowMobileMenu(false)}
           ></div>
-          <div className="fixed left-0 top-0 h-screen w-64 flex flex-col items-start py-4 px-4 bg-opsly-card z-50 lg:hidden transform transition-transform">
-            <div className="w-full flex items-center justify-between mb-6">
-              <Link 
-                to="/" 
-                className="w-10 h-10 flex items-center justify-center hover:opacity-80 transition cursor-pointer"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                <img src="/logo.png" alt="Opsly Logo" className="w-10 h-10 object-contain" />
+          <div className="fixed left-0 top-0 h-screen w-72 flex flex-col items-start py-6 px-4 bg-opsly-card/95 backdrop-blur-xl border-r border-white/5 z-50 lg:hidden animate-fade-in shadow-2xl">
+            <div className="w-full flex items-center justify-between mb-8 px-2">
+              <Link to="/" className="flex items-center gap-2" onClick={() => setShowMobileMenu(false)}>
+                <img src="/logo.png" alt="Opsly Logo" className="w-8 h-8 object-contain" />
+                <span className="text-xl font-bold tracking-tight"><span className="text-opsly-purple">Öps</span>ly</span>
               </Link>
-              <button 
-                onClick={() => setShowMobileMenu(false)}
-                className="text-white p-2 hover:bg-gray-700 rounded-lg"
-              >
-                <HiX className="text-xl" />
+              <button onClick={() => setShowMobileMenu(false)} className="text-slate-400 p-2 hover:text-white rounded-lg transition-colors">
+                <HiX className="text-2xl" />
               </button>
             </div>
-            <Link 
-              to="/documents" 
-              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/documents') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <HiPaperClip className="text-xl text-white flex-shrink-0" />
-              <span className="text-white">AI Documents</span>
-            </Link>
-            <Link 
-              to="/customer-support" 
-              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/customer-support') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <HiPhone className="text-xl text-white" />
-              <span className="text-white">Customer Support</span>
-            </Link>
-            <Link 
-              to="/marketing" 
-              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/marketing') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <HiPlay className="text-xl text-white flex-shrink-0" />
-              <span className="text-white text-left leading-snug">Social media automation</span>
-            </Link>
-            <Link 
-              to="/campaign-ops" 
-              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/campaign-ops') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <HiClock className="text-xl text-white" />
-              <span className="text-white">Campaign Ops</span>
-            </Link>
-            <Link 
-              to="/finance" 
-              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/finance') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <FaCoins className="text-xl text-white" />
-              <span className="text-white">Finance</span>
-            </Link>
-            <Link 
-              to="/meetings" 
-              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/meetings') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <HiCalendar className="text-xl text-white" />
-              <span className="text-white">Meetings</span>
-            </Link>
-            <Link 
-              to="/chatbot" 
-              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/chatbot') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <HiChat className="text-xl text-white" />
-              <span className="text-white">Chatbot</span>
-            </Link>
-            <Link 
-              to="/voice-bot" 
-              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/voice-bot') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <HiMicrophone className="text-xl text-white" />
-              <span className="text-white">Voice Bot</span>
-            </Link>
-            <Link 
-              to="/escalated-calls" 
-              className={`w-full mb-2 p-3 rounded-lg flex items-center gap-3 ${isActive('/escalated-calls') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <HiExclamation className="text-xl text-red-400" />
-              <span className="text-white">Escalated Calls</span>
-            </Link>
-            <div className="mt-auto w-full">
-              <button className="w-full mb-4 p-3 rounded-lg hover:bg-gray-700 flex items-center gap-3">
-                <HiCog className="text-xl text-white" />
-                <span className="text-white">Settings</span>
-              </button>
+            <div className="flex-1 w-full overflow-y-auto hide-scrollbar space-y-2">
+              <NavItem to="/documents" icon={HiPaperClip} label="AI Documents" />
+              <NavItem to="/customer-support" icon={HiPhone} label="Customer Support" />
+              <NavItem to="/marketing" icon={HiPlay} label="Social Automation" />
+              <NavItem to="/campaign-ops" icon={HiClock} label="Campaign Ops" />
+              <NavItem to="/finance" icon={FaCoins} label="Finance" />
+              <NavItem to="/meetings" icon={HiCalendar} label="Meetings" />
+              <NavItem to="/chatbot" icon={HiChat} label="Chatbot" />
+              <NavItem to="/voice-bot" icon={HiMicrophone} label="Voice Bot" />
+              <NavItem to="/escalated-calls" icon={HiExclamation} label="Escalated Calls" alert />
             </div>
           </div>
         </>
       )}
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex fixed left-0 top-0 h-screen w-14 flex-col items-center py-4" style={{ backgroundColor: '#1E1E1E' }}>
-        <Link 
-          to="/" 
-          className="w-10 h-10 flex items-center justify-center mb-6 hover:opacity-80 transition cursor-pointer flex-shrink-0"
-        >
-          <img src="/logo.png" alt="Opsly Logo" className="w-10 h-10 object-contain" />
+      <div className="hidden lg:flex fixed left-0 top-0 h-screen w-[72px] flex-col items-center py-6 bg-opsly-card/50 backdrop-blur-md border-r border-white/5 z-30 shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
+        <Link to="/" className="w-10 h-10 flex items-center justify-center mb-8 hover:scale-105 transition-transform flex-shrink-0">
+          <img src="/logo.png" alt="Opsly Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
         </Link>
-        <Link to="/documents" className="ai-doc-link mb-4 flex-shrink-0 relative flex items-center justify-center">
-          {/* SVG trimpath rainbow border — drawn on hover */}
-          <svg
-            className="ai-doc-svg absolute pointer-events-none"
-            width="42" height="42"
-            viewBox="0 0 42 42"
-            style={{ top: '-3px', left: '-3px' }}
-          >
-            <defs>
-              <linearGradient id="rainbow-stroke" x1="0%" y1="0%" x2="100%" y2="100%" gradientUnits="userSpaceOnUse">
-                <animateTransform attributeName="gradientTransform" type="rotate" from="0 21 21" to="360 21 21" dur="2s" repeatCount="indefinite" />
-                <stop offset="0%"    stopColor="#f43f5e" />
-                <stop offset="20%"   stopColor="#f97316" />
-                <stop offset="40%"   stopColor="#a855f7" />
-                <stop offset="60%"   stopColor="#06b6d4" />
-                <stop offset="80%"   stopColor="#22c55e" />
-                <stop offset="100%"  stopColor="#f43f5e" />
-              </linearGradient>
-            </defs>
-            <rect
-              x="1.5" y="1.5"
-              width="39" height="39"
-              rx="11"
-              fill="none"
-              stroke="url(#rainbow-stroke)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              className="trimpath-rect"
-            />
-          </svg>
-          {/* Icon */}
-          <span className={`relative z-10 flex items-center justify-center rounded-[0.65rem] w-9 h-9 transition-colors ${
-            isActive('/documents') ? 'bg-gray-700' : 'hover:bg-gray-700'
-          }`}>
-            <HiPaperClip className="text-white text-lg" />
-          </span>
-        </Link>
-        <Link to="/customer-support" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/customer-support') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-          <HiPhone className="text-xl text-white" />
-        </Link>
-        <Link
-          to="/marketing"
-          title="Social media automation"
-          className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/marketing') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-        >
-          <HiPlay className="text-xl text-white" />
-        </Link>
-        <Link
-          to="/campaign-ops"
-          title="Campaign Ops"
-          className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/campaign-ops') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-        >
-          <HiClock className="text-xl text-white" />
-        </Link>
-        <Link to="/finance" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/finance') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-          <FaCoins className="text-xl text-white" />
-        </Link>
-        <Link to="/chatbot" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/chatbot') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-          <HiChat className="text-xl text-white" />
-        </Link>
-        <Link to="/voice-bot" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/voice-bot') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-          <HiMicrophone className="text-xl text-white" />
-        </Link>
-        <Link to="/meetings" className={`mb-4 p-2 rounded-lg flex-shrink-0 ${isActive('/meetings') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-          <HiCalendar className="text-xl text-white" />
-        </Link>
-        <Link
-          to="/escalated-calls"
-          title="Escalated Calls"
-          className={`mb-4 p-2 rounded-lg flex-shrink-0 relative ${isActive('/escalated-calls') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-        >
-          <HiExclamation className="text-xl text-red-400" />
-        </Link>
-        <div className="mt-auto">
-          <button className="mb-4 p-2 rounded-lg hover:bg-gray-700 flex-shrink-0">
-            <HiCog className="text-xl text-white" />
+        <div className="flex-1 w-full flex flex-col items-center hide-scrollbar overflow-y-auto">
+          <NavItem to="/documents" icon={HiPaperClip} label="AI Documents" />
+          <NavItem to="/customer-support" icon={HiPhone} label="Customer Support" />
+          <NavItem to="/marketing" icon={HiPlay} label="Social Automation" />
+          <NavItem to="/campaign-ops" icon={HiClock} label="Campaign Ops" />
+          <NavItem to="/finance" icon={FaCoins} label="Finance" />
+          <NavItem to="/chatbot" icon={HiChat} label="Chatbot" />
+          <NavItem to="/voice-bot" icon={HiMicrophone} label="Voice Bot" />
+          <NavItem to="/meetings" icon={HiCalendar} label="Meetings" />
+          <NavItem to="/escalated-calls" icon={HiExclamation} label="Escalated Calls" alert />
+        </div>
+        <div className="mt-4">
+          <button className="p-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors">
+            <HiCog className="text-xl" />
           </button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col bg-opsly-dark lg:ml-14 w-full min-w-0 overflow-hidden h-screen">
-        {/* Header */}
-        <header className="bg-opsly-dark px-3 sm:px-5 py-3 sm:py-4 flex items-center justify-between border-b border-gray-800 min-w-0 overflow-visible max-w-full relative z-20">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <button
-              onClick={() => setShowMobileMenu(true)}
-              className="lg:hidden text-white p-2 hover:bg-gray-700 rounded-lg flex-shrink-0"
-            >
-              <HiMenu className="text-xl" />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col lg:ml-[72px] w-full min-w-0 h-screen relative z-10">
+        
+        {/* Top Header */}
+        <header className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-opsly-dark/40 backdrop-blur-md sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setShowMobileMenu(true)} className="lg:hidden text-slate-300 p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <HiMenu className="text-2xl" />
             </button>
-            <h2 className="text-sm sm:text-base lg:text-lg text-white truncate min-w-0">
-              <span className="hidden sm:inline">Good Morning, </span>
-              <span className="sm:hidden">Hi, </span>
-              <span className="text-opsly-purple truncate">{displayName}</span>
-            </h2>
+            <div className="flex flex-col">
+              <span className="text-xs text-slate-400 font-medium tracking-wide uppercase">Welcome back</span>
+              <h2 className="text-lg font-bold text-white truncate">
+                {displayName}
+              </h2>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 flex-shrink-0 ml-2">
-            <button
-              onClick={() => navigate('/support-us')}
-              className="px-2 sm:px-3 py-1.5 rounded-full bg-opsly-purple text-white text-xs font-medium hover:bg-purple-700 transition border border-purple-500/60 whitespace-nowrap flex-shrink-0"
-            >
-              <span className="hidden sm:inline">Support Us</span>
-              <span className="sm:hidden">Support</span>
+
+          <div className="flex items-center gap-4 sm:gap-6">
+            <button onClick={() => navigate('/support-us')} className="hidden sm:flex px-4 py-2 rounded-lg bg-opsly-purple/10 text-opsly-purple text-sm font-semibold hover:bg-opsly-purple hover:text-white transition-all border border-opsly-purple/20">
+              Support Us
             </button>
-            <FaSearch className="text-base sm:text-lg text-white cursor-pointer hover:text-gray-300 transition flex-shrink-0" />
-            <FaBell className="text-base sm:text-lg text-white cursor-pointer hover:text-gray-300 transition flex-shrink-0" />
-            <div className="relative flex-shrink-0">
+            <button className="text-slate-400 hover:text-white transition-colors">
+              <FaSearch className="text-lg" />
+            </button>
+            <button className="text-slate-400 hover:text-white transition-colors relative">
+              <FaBell className="text-lg" />
+              <span className="absolute top-0 right-0 w-2 h-2 bg-opsly-purple rounded-full"></span>
+            </button>
+            
+            <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-7 h-7 sm:w-8 sm:h-8 bg-opsly-purple rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-semibold hover:bg-purple-700 transition flex-shrink-0"
+                className="w-10 h-10 bg-gradient-to-br from-opsly-purple to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold hover:shadow-[0_0_15px_rgba(139,92,246,0.5)] transition-all ring-2 ring-white/10 overflow-hidden"
               >
                 {displayName.charAt(0).toUpperCase()}
               </button>
@@ -281,21 +167,18 @@ function DashboardLayout({ children, userName }) {
               {/* User Dropdown Menu */}
               {showUserMenu && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-30" 
-                    onClick={() => setShowUserMenu(false)}
-                  ></div>
-                  <div className="absolute right-0 mt-2 w-36 bg-opsly-card rounded-lg shadow-lg py-1.5 z-40 border border-gray-700 overflow-visible">
-                    <div className="px-3 py-1.5 border-b border-gray-700">
-                      <p className="text-white text-xs font-semibold truncate">{displayName}</p>
-                      <p className="text-gray-400 text-xs truncate">{user?.email}</p>
+                  <div className="fixed inset-0 z-30" onClick={() => setShowUserMenu(false)}></div>
+                  <div className="absolute right-0 mt-3 w-48 bg-opsly-card/95 backdrop-blur-xl rounded-xl shadow-2xl py-2 z-40 border border-white/10 animate-fade-in">
+                    <div className="px-4 py-3 border-b border-white/5 mb-1">
+                      <p className="text-white text-sm font-semibold truncate">{displayName}</p>
+                      <p className="text-slate-400 text-xs truncate mt-0.5">{user?.email}</p>
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="w-full px-3 py-1.5 text-left text-red-400 hover:bg-gray-700 flex items-center gap-2 transition text-xs"
+                      className="w-full px-4 py-2.5 text-left text-red-400 hover:bg-white/5 flex items-center gap-3 transition-colors text-sm font-medium"
                     >
-                      <HiLogout className="text-base flex-shrink-0" />
-                      <span>Sign Out</span>
+                      <HiLogout className="text-lg" />
+                      Sign Out
                     </button>
                   </div>
                 </>
@@ -305,8 +188,8 @@ function DashboardLayout({ children, userName }) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-3 sm:p-5 overflow-y-auto overflow-x-hidden min-w-0">
-          <div className="min-w-0 max-w-full">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto hide-scrollbar">
+          <div className="max-w-[1600px] mx-auto animate-slide-up">
             {children}
           </div>
         </main>

@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+import base64
+import json
 from urllib.parse import urlencode
 
 from fastapi import FastAPI, Request, Depends
@@ -86,6 +88,27 @@ _GOOGLE_SCOPES = os.getenv(
     "GOOGLE_SCOPES",
     "https://www.googleapis.com/auth/calendar.events",
 )
+
+
+def _encode_google_state(user_id: str, return_to: str) -> str:
+    payload = {"user_id": user_id, "return_to": return_to}
+    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    return base64.urlsafe_b64encode(raw).decode("ascii")
+
+
+def _decode_google_state(state: str) -> tuple[str, str]:
+    default_return_to = f"{FRONTEND_URL}/marketing"
+    if not state:
+        return "anonymous", default_return_to
+
+    try:
+        raw = base64.urlsafe_b64decode(state.encode("ascii")).decode("utf-8")
+        payload = json.loads(raw)
+        user_id = str(payload.get("user_id") or "anonymous")
+        return_to = str(payload.get("return_to") or default_return_to)
+        return user_id, return_to
+    except Exception:
+        return state, default_return_to
 
 # Scopes required for reading pages, analytics AND publishing posts
 _FB_SCOPES = (
@@ -193,7 +216,7 @@ async def facebook_callback(request: Request, db: Session = Depends(get_db)):
         user_by_fb.session_token = long_token
 
     else:
-        db.add(User(facebook_id=facebook_id, name=name, session_token=long_token))
+        db.add(User(facebook_id=facebook_id, name=name, session_token=long_token, user_id=UUIDType(state) if state and state != "anonymous" else None))
 
     db.commit()
 
@@ -270,6 +293,7 @@ def linkedin_callback(request: Request, db: Session = Depends(get_db)):
     else:
         db.add(
             User(
+                user_id=UUIDType(state) if state and state != "anonymous" else None,
                 linkedin_access_token=access,
                 linkedin_refresh_token=refresh,
                 linkedin_token_expires_at=exp_at,
@@ -282,7 +306,7 @@ def linkedin_callback(request: Request, db: Session = Depends(get_db)):
 
 
 @app.get("/auth/google/login")
-def google_login(user_id: str = None):
+def google_login(user_id: str = None, return_to: str = None):
     """
     Start Google OAuth flow.
     Pass Supabase user_id as query param so callback can link tokens to the user.
@@ -290,7 +314,7 @@ def google_login(user_id: str = None):
     if not GOOGLE_CLIENT_ID:
         return RedirectResponse(f"{FRONTEND_URL}/marketing?error=google_config_missing")
 
-    state = user_id or "anonymous"
+    state = _encode_google_state(user_id or "anonymous", return_to or f"{FRONTEND_URL}/meetings")
     q = urlencode(
         {
             "client_id": GOOGLE_CLIENT_ID,
@@ -314,6 +338,7 @@ def google_callback(request: Request, db: Session = Depends(get_db)):
 
     code = request.query_params.get("code")
     state = request.query_params.get("state", "")
+    state_user_id, return_to = _decode_google_state(state)
 
     if not code:
         return RedirectResponse(f"{FRONTEND_URL}/marketing?error=google_denied")
@@ -352,9 +377,9 @@ def google_callback(request: Request, db: Session = Depends(get_db)):
         user_email = None
 
     user_by_uid = None
-    if state and state != "anonymous":
+    if state_user_id and state_user_id != "anonymous":
         try:
-            user_uuid = UUIDType(state)
+            user_uuid = UUIDType(state_user_id)
             user_by_uid = db.query(User).filter(User.user_id == user_uuid).first()
         except ValueError:
             pass
@@ -373,6 +398,7 @@ def google_callback(request: Request, db: Session = Depends(get_db)):
     else:
         db.add(
             User(
+                user_id=UUIDType(state_user_id) if state_user_id and state_user_id != "anonymous" else None,
                 google_access_token=access,
                 google_refresh_token=refresh,
                 google_token_expires_at=exp_at,
@@ -381,7 +407,8 @@ def google_callback(request: Request, db: Session = Depends(get_db)):
         )
 
     db.commit()
-    return RedirectResponse(f"{FRONTEND_URL}/marketing?connected=google")
+    separator = "&" if "?" in return_to else "?"
+    return RedirectResponse(f"{return_to}{separator}connected=google")
 
 
 @app.get("/user/connection-status")
@@ -416,7 +443,7 @@ def get_connection_status(
         "facebook": has_session_token,
         "instagram": has_session_token,
         "linkedin": has_linkedin,
-        "google": bool(user.google_access_token),
+        "google": bool(user.google_refresh_token),
         "name": user.name,
     }
 

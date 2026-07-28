@@ -1,7 +1,7 @@
 // src/services/chatbotService.js
 // RAG Chatbot API service
 // Configure the backend URL - update this to match your FastAPI backend
-const RAG_API_BASE_URL = import.meta.env.VITE_RAG_API_BASE_URL || 'http://localhost:8000'
+const RAG_API_BASE_URL = import.meta.env.VITE_RAG_API_BASE_URL || '/chatbot-api'
 
 const ragApiClient = async (endpoint, options = {}) => {
   const url = `${RAG_API_BASE_URL}${endpoint}`

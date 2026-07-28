@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, extract
@@ -282,9 +283,8 @@ def upload_financial_data_csv(
         total_rows_read = 0
         max_amount = 999999999999999.99
         
-        # For large files, skip fraud detection to speed up processing
-        # You can make this configurable if needed
-        skip_fraud_check = True  # Set to False if you want fraud checking (will be slower)
+        # Fraud detection is enabled by default; toggle via env var for large imports
+        skip_fraud_check = os.getenv("SKIP_CSV_FRAUD_CHECK", "false").lower() == "true"
         
         print(f"Processing CSV in chunks of {CHUNK_SIZE} rows...")
         
