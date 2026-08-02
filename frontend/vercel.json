@@ -2,7 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://marketing-minds-be.vercel.app/:path*"
+      "destination": "https://opsly-repo.onrender.com/:path*"
+    },
+    {
+      "source": "/chatbot-api/:path*",
+      "destination": "https://chatbot-be-sooty.vercel.app/:path*"
     },
     {
       "source": "/(.*)",

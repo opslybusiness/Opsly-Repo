@@ -16,7 +16,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/campaign-api/, ''),
       },
       '/chatbot-api': {
-        target: 'https://chatbot-be-three.vercel.app',
+        target: 'https://chatbot-be-sooty.vercel.app',
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/chatbot-api/, ''),

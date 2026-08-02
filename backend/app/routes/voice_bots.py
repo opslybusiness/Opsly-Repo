@@ -31,7 +31,7 @@ VAPI_API_KEY      = os.getenv("VAPI_API_KEY")
 VAPI_BASE_URL     = os.getenv("VAPI_BASE_URL", "https://api.vapi.ai")
 BACKEND_PUBLIC_URL   = os.getenv("BACKEND_PUBLIC_URL", "http://localhost:8000")
 # Chatbot backend — handles embeddings and pgvector retrieval (no Jina key needed here)
-CHATBOT_BACKEND_URL  = os.getenv("CHATBOT_BACKEND_URL", "https://chatbot-be-three.vercel.app")
+CHATBOT_BACKEND_URL  = os.getenv("CHATBOT_BACKEND_URL", "https://chatbot-be-sooty.vercel.app")
 CHATBOT_INTERNAL_KEY = os.getenv("CHATBOT_INTERNAL_KEY", "")
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_CALENDAR_INSERT_EVENT_URL = "https://www.googleapis.com/calendar/v3/calendars/primary/events"

@@ -42,6 +42,7 @@ app = FastAPI(lifespan=lifespan)
 origins = [
     "https://marketing-minds-three.vercel.app",
     "https://www.opslybusiness.me",
+    "https://opsly.rohanjaved.qzz.io",
     "http://localhost:5173",
     "http://localhost:5174",
 ]
